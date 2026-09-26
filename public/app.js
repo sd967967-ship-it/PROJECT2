@@ -178,7 +178,22 @@ function setFollow(hex) {
   document.getElementById("follow").classList.toggle("on", !!state.followHex);
   v.scene.requestRender();
 }
+async function loadAirports() {
+  const v = state.viewer;
+  try {
+    const d = await fetchJSON("/api/airports");
+    for (const a of d.airports || []) {
+      v.entities.add({
+        id: `ap:${a.iata}`, position: Cesium.Cartesian3.fromDegrees(a.lon, a.lat, 5000),
+        point: { pixelSize: 7, color: Cesium.Color.fromCssColorString("#57e6ff"), outlineColor: Cesium.Color.BLACK, outlineWidth: 2 },
+        label: { text: `${a.iata} · ${a.nearby || 0}`, font: "11px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -16), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(3e6, 3e7) },
+      }).airport = a;
+    }
+    v.scene.requestRender();
+  } catch { /* airports are decoration; map works without them */ }
+}
 function drawRoute(arc) {
+  const v = state.viewer;
   if (state.routeEnt) { v.entities.remove(state.routeEnt); state.routeEnt = null; }
   if (!arc || !arc.length) return;
   state.routeEnt = v.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArrayHeights(arc.flatMap((p) => [p[1], p[0], 11000])), width: 2, material: Cesium.Color.fromCssColorString("#57e6ff") } });
