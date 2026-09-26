@@ -31,7 +31,7 @@ class Poller {
       this.consecFails++;
       if (this.fetchFallback && this.consecFails >= 2) {
         try {
-          const states = await this.fetchFallback(this.hubIdx++);
+          const states = await this.fetchFallback();
           this.store(now, states, "fallback");
           return this.cache;
         } catch { /* fall through to stale */ }

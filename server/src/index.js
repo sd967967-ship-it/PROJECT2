@@ -50,7 +50,6 @@ function tracks() {
   }
   return { t: snap.t || Date.now(), src, tracks: list };
 }
-let hubIdx = 0;
 const poller = new Poller({
   fetchPrimary: () => fetchOpenSky(),
   fetchFallback: async () => {
