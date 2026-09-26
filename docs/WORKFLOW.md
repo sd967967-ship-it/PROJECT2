@@ -17,7 +17,10 @@
 3. Free-tier cold start accepted; UptimeRobot ping optional.
 
 ## Release process
-Phase gates in PROGRESS.md: map → detail → services/fares → ws → airport/search. Tag `v0.<phase>` per gate.
+Phase gates in PROGRESS.md: map → detail → services/fares → ws → airport/search → domains (space/solar, sea, streets). Tag `v0.<phase>` per gate.
+
+## Domain activation (multimodal)
+Activating a parked Adapter is config-only, never code: add feed URL/key to host env (see ARCHITECTURE.md slots), add fixture rows + contract test, update LLD.md registry + PROGRESS.md. Checklist: [ ] no secrets in repo [ ] polite rate + cache [ ] attribution shown in UI [ ] fallback when feed dies.
 
 ## Rollback process
 `git revert <sha>` + redeploy; snapshot cache is ephemeral so rollback is stateless. Never force-push shared `main`.

@@ -18,6 +18,7 @@ _Last updated: 2026-09-27_
 - Worldwide sweep fallback — 2026-09-27 — 43-cell adsb.lol grid, rotating groups per cycle merged into a 5min hex registry in `index.js`; poll 30s + rate-limit backoff; 8-hub start, politeness throttle on 429; measured: N-America/Europe/Asia/Africa covered, S-America+Oceania pending rotation; cap raised 800→1200.
 - Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
 - QA rounds 2+3 — 2026-09-27 — 15 cycles (13–27), 825/825 checks green; zoom + favicon fixes verified; feed stable ~800 merged tracks; release verdict conditionally-ready; `tests/reports/QA-FINAL.md`.
+- Multimodal plan adopted — 2026-09-27 — docs aligned to `multimodal-space-plan.md`: TrackingSource seam, P6–P9 stories, domain Adapter registry (aiscast/CelesTrak/NTES/GTFS-RT verified keyless), key policy (agent never creates accounts), activation = config-only per WORKFLOW.md.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
@@ -34,4 +35,4 @@ _Last updated: 2026-09-27_
 - OpenSky auth creds — optional; anonymous works with lower quota.
 
 ## 🔧 Corrections
-- 2026-09-27: Google-tile plan replaced with Esri World Imagery (direct Google tiles violate ToS; Esri needs no key). Leaflet plan replaced with Cesium 3D per designer brief.
+- 2026-09-27: LLD said 10 airlines — `airlines.json` actually holds 30 (verified by count). ARCHITECTURE test counts updated to 21 server / 38 repo (fresh runs). POLL_MS default corrected 10s→30s; Esri-default references corrected to Google default; TECHFLOW failure/backoff rows corrected to actual behavior.
