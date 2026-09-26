@@ -18,7 +18,8 @@ class Poller {
     return f ? (Date.now() - f) / 60000 : 0;
   }
   async cycle() {
-    const now = Date.now();
+    if (this.running) return this.cache; // slow fallback must not stack cycles
+    this.running = true;
     try {
       const states = await this.fetchPrimary();
       this.consecFails = 0;

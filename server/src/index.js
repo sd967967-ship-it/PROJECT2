@@ -54,8 +54,17 @@ let hubIdx = 0;
 const poller = new Poller({
   fetchPrimary: () => fetchOpenSky(),
   fetchFallback: async () => {
-    const h = HUBS[hubIdx++ % HUBS.length];
-    return fetchPoint(h[0], h[1], 250);
+    // Merge all hub regions so fallback stays dense instead of swinging hub to hub.
+    const out = new Map();
+    for (const h of HUBS) {
+      try {
+        const rows = await fetchPoint(h[0], h[1], 250);
+        for (const r of rows) if (!out.has(r.hex)) out.set(r.hex, r);
+      } catch { /* one hub failing must not sink the rest */ }
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    if (!out.size) throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE" });
+    return [...out.values()];
   },
   intervalMs: Number(process.env.POLL_MS || 10000),
 });
