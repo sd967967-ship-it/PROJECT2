@@ -14,6 +14,7 @@ _Last updated: 2026-09-27_
 - Fix round — 2026-09-27 — MAP-01 root cause was removed `imageryProvider` ctor option (0 layers), fixed with `baseLayer: new ImageryLayer()`; FEED-01 fallback now merges all 4 hubs + no-overlap guard; grid clustering (3D) + markercluster (2D); Google satellite default with ToS note; fixes verified by screenshot + cycle 12; see `tests/reports/FIX-REPORT.md`.
 - Feeds verdict — 2026-09-27 — probed airplanes.live (403 needs feeder arrangement), ADSB One (Cloudflare 403), adsb.fi (no compatible endpoint); only adsb.lol works keyless, stays as fallback; verdicts in ARCHITECTURE.md.
 - Plane markers — 2026-09-27 — singles render as heading-rotated plane silhouettes (canvas billboard 3D, SVG 2D); numbered badges kept for clusters only; verified 402-track Europe screenshot.
+- Yellow small planes — 2026-09-27 — `#ffd23f` silhouettes, 30px footprint; clustering relaxed (3D groups ≤30 stay planes, 2D radius 25 + decluster at zoom 6); verified 13 yellow planes over India, 0 numbered badges at that zoom.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
