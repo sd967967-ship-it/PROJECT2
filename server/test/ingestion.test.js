@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { mapStates } = require("../src/ingestion/openskyAdapter");
-const { mapAc } = require("../src/ingestion/adsbLolAdapter");
+const { mapAc, WORLD_GRID, fetchSweep } = require("../src/ingestion/adsbLolAdapter");
 const { Poller } = require("../src/ingestion/poller");
 
 test("opensky maps state vector", () => {
@@ -19,7 +19,17 @@ test("adsb.lol maps ac rows with unit conversion", () => {
   assert.equal(out[0].type, "B77W");
   assert.ok(Math.abs(out[0].velMs - 231.5) < 1);
 });
-test("poller backs off on rate-limit, recovers after", async () => {
+test("sweep covers a 43-point world grid and merges groups", async () => {
+  assert.ok(WORLD_GRID.length >= 40);
+  const seen = [];
+  const rows = await fetchSweep([[1, 1], [2, 2]], { gapMs: 0, fetchFn: async (la, lo) => { seen.push([la, lo]); return [{ hex: `h${la}`, lat: la, lon: lo }]; } });
+  assert.deepEqual(seen, [[1, 1], [2, 2]]);
+  assert.equal(rows.length, 2);
+});
+test("sweep survives a failing cell", async () => {
+  const rows = await fetchSweep([[1, 1]], { gapMs: 0, fetchFn: async () => { throw new Error("x"); } });
+  assert.deepEqual(rows, []);
+});
   let calls = 0;
   const p = new Poller({
     fetchPrimary: async () => { calls++; throw Object.assign(new Error("rl"), { code: "FEED_RATE_LIMITED" }); },
