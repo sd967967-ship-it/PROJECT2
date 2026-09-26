@@ -20,7 +20,29 @@ git config --global user.email "sd967967@gmail.com"
 
 Auth uses HTTPS + Git Credential Manager. Sign in with GitHub when prompted.
 
-## Daily sync — keeps every change thorough on all computers
+## Automatic sync — ~10s both directions (Windows)
+
+One-time per PC:
+
+```powershell
+cd $env:USERPROFILE\PROJECT2
+git config pull.rebase true
+git config rebase.autoStash true
+git pull --rebase
+```
+
+Start auto-sync (runs until closed):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\auto-sync.ps1
+```
+
+Or double-click `start-sync.bat`. Keep the window open while working.
+Single cycle test: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\auto-sync.ps1 -Once`
+
+Log: `.git/auto-sync.log`. If it prints CONFLICT, run `git status`, fix files, `git rebase --continue`, then it resumes.
+
+## Manual sync (fallback)
 
 Start work:
 ```powershell
