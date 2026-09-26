@@ -13,7 +13,7 @@
 ## Infra & hosting (all free)
 - Frontend: Vercel free (or same Render service for single-origin simplicity).
 - Backend: Render free 750h (sleeps; UptimeRobot ping) or Fly free. One instance to preserve single-poller invariant.
-- Tiles: OSM standard / Carto light, attribution required, respect tile usage policy.
+- Imagery: Google satellite default (direct tiles; production needs Maps API key), Esri World Imagery + OSM + Esri reference as compliant free alternatives (layer buttons).
 - No Docker required for MVP.
 
 ## Third-party services & why

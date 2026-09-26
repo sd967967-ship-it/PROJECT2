@@ -11,6 +11,7 @@ _Last updated: 2026-09-27_
 - WebGL fallback — 2026-09-27 — pinned Cesium 1.145 + dual-CDN loader with diagnostics; automatic Leaflet 2D satellite fallback (`app2d.js`) sharing `shared.js` dossier; machine driver Intel 27.20.100.8935 (2020) likely blocklisted — site now runs regardless.
 - Overlay-specifity bug — 2026-09-27 — `#nogl {display:grid}` overrode `[hidden]` so the fallback box covered working maps; fixed with `#nogl[hidden]{display:none}`; verified via headless-Firefox screenshots of both paths.
 - QA 10 cycles — 2026-09-27 — 460/460 automated checks green; 2 High bugs (FEED-01 exhausted primary→thin swinging fallback; MAP-01 Esri tiles never requested→blue globe), 1 Medium (marker bunching), 1 Low + 2 cosmetic; verdict not-ready-for-release; full report `tests/reports/QA-10-CYCLES.md`; no app code changed.
+- Fix round — 2026-09-27 — MAP-01 root cause was removed `imageryProvider` ctor option (0 layers), fixed with `baseLayer: new ImageryLayer()`; FEED-01 fallback now merges all 4 hubs + no-overlap guard; grid clustering (3D) + markercluster (2D); Google satellite default with ToS note; fixes verified by screenshot + cycle 12; see `tests/reports/FIX-REPORT.md`.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.

@@ -19,6 +19,7 @@ test("U-STATIC-01 three imagery layers (sat/hybrid/street)", () => {
 test("U-STATIC-02 free 3D globe, render-on-demand", () => {
   assert.match(app, /new Cesium\.Viewer/);
   assert.match(app, /requestRenderMode/);
+  assert.match(app, /new Cesium\.ImageryLayer/);
   assert.match(app, /LEFT_CLICK/);
 });
 test("U-STATIC-03 detail panel IDs present", () => {
