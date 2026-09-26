@@ -39,3 +39,15 @@ test("U-STATIC-06 loader has fallback CDN and diagnostic box", () => {
   assert.ok(html.includes('id="noglMsg"'));
   assert.match(html, /webgl2/);
 });
+test("U-STATIC-07 automatic 2D fallback path", () => {
+  assert.match(html, /shared\.js/);
+  assert.match(html, /app2d\.js/);
+  assert.match(html, /leaflet/);
+  assert.ok(html.includes('id="map2d"'));
+  const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
+  assert.match(two, /World_Imagery/);
+  assert.match(two, /renderDossier/);
+  const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
+  assert.match(shared, /renderDossier/);
+  assert.match(shared, /updateTicker/);
+});
