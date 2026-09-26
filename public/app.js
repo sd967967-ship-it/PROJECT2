@@ -39,8 +39,9 @@ function initViewer() {
     url: "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
     subdomains: ["mt0", "mt1", "mt2", "mt3"], credit: "Imagery © Google",
   });
+  const layerFor = (p) => new Cesium.ImageryLayer(p);
   const viewer = new Cesium.Viewer("globe", {
-    imageryProvider: googleSat,
+    baseLayer: layerFor(googleSat),
     baseLayerPicker: false, geocoder: false, homeButton: true,
     timeline: false, animation: false, fullscreenButton: false,
     requestRenderMode: true,
@@ -58,7 +59,7 @@ function initViewer() {
 function setLayer(name) {
   const v = state.viewer, layers = v.imageryLayers;
   layers.removeAll();
-  for (const p of state.imagery[name]) layers.addImageryProvider(p);
+  for (const p of state.imagery[name]) layers.add(new Cesium.ImageryLayer(p));
   document.querySelectorAll(".layers button").forEach((b) => b.classList.toggle("on", b.dataset.lyr === name));
   v.scene.requestRender();
 }
