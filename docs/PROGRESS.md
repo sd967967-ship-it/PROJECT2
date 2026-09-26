@@ -15,6 +15,7 @@ _Last updated: 2026-09-27_
 - Feeds verdict — 2026-09-27 — probed airplanes.live (403 needs feeder arrangement), ADSB One (Cloudflare 403), adsb.fi (no compatible endpoint); only adsb.lol works keyless, stays as fallback; verdicts in ARCHITECTURE.md.
 - Plane markers — 2026-09-27 — singles render as heading-rotated plane silhouettes (canvas billboard 3D, SVG 2D); numbered badges kept for clusters only; verified 402-track Europe screenshot.
 - Yellow small planes — 2026-09-27 — `#ffd23f` silhouettes, 30px footprint; clustering relaxed (3D groups ≤30 stay planes, 2D radius 25 + decluster at zoom 6); verified 13 yellow planes over India, 0 numbered badges at that zoom.
+- Worldwide sweep fallback — 2026-09-27 — 43-cell adsb.lol grid, rotating groups per cycle merged into a 5min hex registry in `index.js`; poll 30s + rate-limit backoff; verified spread below.
 - Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
 - QA rounds 2+3 — 2026-09-27 — 15 cycles (13–27), 825/825 checks green; zoom + favicon fixes verified; feed stable ~800 merged tracks; release verdict conditionally-ready; `tests/reports/QA-FINAL.md`.
 
