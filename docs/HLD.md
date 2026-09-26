@@ -35,7 +35,7 @@ One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 4
 ## External services
 - OpenSky REST (authenticated free, credit-bucketed) — primary live feed.
 - adsb.lol API (free, ODbL, attribution required) — gap-fill Adapter.
-- OSM/Carto tiles (free, usage policy + attribution). Esri World Imagery replaces Google tiles (no key, compliant; Google direct tiles violate ToS).
+- Imagery: Google satellite default (direct tiles; production needs Maps API key), Esri World Imagery + OSM selectable (compliant free options).
 - Vercel (frontend) + Render/Fly free (backend). No AviationStack/AeroDataBox/Skyscanner in MVP.
 
 ## Non-functional requirements
