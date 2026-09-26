@@ -2,13 +2,15 @@
 // WebGL/Cesium is unavailable. Same data, dossier, search, and ticker as 3D via shared.js.
 const state2d = { map: null, markers: new Map(), routeLine: null, all: [], layers: {} };
 function initMap() {
+  const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
+  const googleHyb = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
   const sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri World Imagery" });
   const labels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri" });
   const street = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
   const map = L.map("map2d", { worldCopyJump: true, minZoom: 2 }).setView([25, 20], 2);
-  sat.addTo(map);
-  state2d.layers = { sat: [sat], hybrid: [sat, labels], street: [street] };
-  state2d.active = [sat];
+  googleSat.addTo(map);
+  state2d.layers = { sat: [googleSat], hybrid: [googleHyb], street: [street], esri: [sat, labels] };
+  state2d.active = [googleSat];
   state2d.map = map;
   document.querySelectorAll(".layers button").forEach((b) => b.addEventListener("click", () => {
     state2d.active.forEach((l) => map.removeLayer(l));
@@ -96,6 +98,7 @@ function connectWS2d() {
   document.getElementById("globe").hidden = true;
   document.getElementById("map2d").hidden = false;
   initMap();
+  document.getElementById("pSub").textContent = "Click any badge on the map.";
   wireSearch2d();
   document.getElementById("close").addEventListener("click", () => drawRoute2d(null));
   const ok = await live2d();

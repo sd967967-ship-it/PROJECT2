@@ -19,7 +19,7 @@ html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt
 #nogl { position: fixed; inset: 0; display: grid; place-items: center; background: var(--space); z-index: 50; }
 #nogl[hidden] { display: none; }
 .rail {
-  position: fixed; top: 14px; left: 14px; width: 300px; z-index: 10;
+  position: fixed; top: 14px; left: 14px; width: 322px; z-index: 10;
   background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
   padding: 12px; backdrop-filter: blur(8px);
 }
@@ -32,9 +32,9 @@ html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt
   border: 1px solid var(--line); background: #060b16; color: var(--txt); font-family: var(--mono); font-size: 13px;
 }
 .rail input:focus-visible, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-.layers { display: flex; gap: 6px; margin-top: 10px; }
+.layers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .layers button {
-  flex: 1; padding: 7px 0; border-radius: 8px; border: 1px solid var(--line);
+  flex: 1 1 22%; padding: 7px 0; border-radius: 8px; border: 1px solid var(--line);
   background: transparent; color: var(--mut); font-family: var(--display); font-size: 12.5px; cursor: pointer;
 }
 .layers button.on { color: #04121a; background: var(--cyan); border-color: var(--cyan); font-weight: 700; }

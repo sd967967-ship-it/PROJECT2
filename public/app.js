@@ -29,14 +29,24 @@ function initViewer() {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
     credit: "Esri",
   });
+  // Google tiles need an API key for production use; direct endpoints work for demo.
+  // Esri stays available as the compliant free option (see docs).
+  const googleSat = new Cesium.UrlTemplateImageryProvider({
+    url: "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    subdomains: ["mt0", "mt1", "mt2", "mt3"], credit: "Imagery © Google",
+  });
+  const googleHyb = new Cesium.UrlTemplateImageryProvider({
+    url: "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    subdomains: ["mt0", "mt1", "mt2", "mt3"], credit: "Imagery © Google",
+  });
   const viewer = new Cesium.Viewer("globe", {
-    imageryProvider: esri,
+    imageryProvider: googleSat,
     baseLayerPicker: false, geocoder: false, homeButton: true,
     timeline: false, animation: false, fullscreenButton: false,
     requestRenderMode: true,
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });
-  state.imagery = { sat: [esri], hybrid: [esri, labels], street: [osm] };
+  state.imagery = { sat: [googleSat], hybrid: [googleHyb], street: [osm], esri: [esri, labels] };
   state.viewer = viewer;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(60, 20, 30000000) });
