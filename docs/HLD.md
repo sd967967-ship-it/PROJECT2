@@ -1,12 +1,14 @@
 # High-Level Design
 
 ## System overview
-One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill over rotating hubs), fuses them into `TrackedFlight` records with nearest-hub/capacity/fares, caches once, and pushes viewport diffs over `ws` to a Cesium 3D frontend with Esri satellite imagery. Static JSON covers airports/capacity/services/countries; fare estimator is modeled day-1. Demo fallback keeps the site presentable when feeds are unreachable.
+One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 43-cell sweep merged into a 5min registry as fallback), fuses them into `TrackedFlight` records with nearest-hub/capacity/fares, caches once, and pushes viewport diffs over `ws` to a Cesium 3D frontend with Google satellite imagery. Static JSON covers airports/capacity/services/countries; fare estimator is modeled day-1. Demo fallback keeps the site presentable when feeds are unreachable.
 
 ```
-[OpenSky /api/states/all] ─┐
-[adsb.lol /v2/point hubs] ─┼→ [Ingestion Module: poll 10s, cache once]
+[OpenSky /api/states/all] ─┐ (global when healthy)
+[adsb.lol sweep 43 cells] ─┼→ [Ingestion Module: poll 30s, cache once]
 [static JSON data] ────────┘          ↓
+                    [Registry: hex-merged, 5min TTL → near-worldwide]
+                                          ↓
                     [Fusion: dedupe/nearest-hub] → [Capacity] → [Pricing estimator] → [Services]
                                           ↓
                     [Broadcast Module: ws subscribe(bbox), 5s diff push]
