@@ -1,5 +1,14 @@
 // SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
-const state = { viewer: null, entities: new Map(), routeEnt: null, mode: "demo", all: [], imagery: {} };
+const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", all: [], imagery: {}, selectedHex: null, followHex: null, trails: new Map() };
+function pushTrail(f) {
+  if (!f || f.hex == null) return;
+  let t = state.trails.get(f.hex);
+  if (!t) { t = []; state.trails.set(f.hex, t); }
+  const last = t[t.length - 1];
+  if (!last || Math.abs(last[0] - f.lat) > 1e-4 || Math.abs(last[1] - f.lon) > 1e-4) t.push([f.lat, f.lon]);
+  if (t.length > 12) t.shift();
+  if (state.trails.size > 1200) state.trails.delete(state.trails.keys().next().value);
+}
 
 function drawPlane(g, hdgDeg) {
   // Top-down silhouette pointing north, rotated to the true heading.
@@ -148,8 +157,25 @@ function upsert(list) {
     }
   }
   for (const [id, e] of state.entities) if (!seen.has(id)) { v.entities.remove(e); state.entities.delete(id); }
+  for (const f of list.slice(0, 800)) pushTrail(f);
   state.all = list;
   updateTicker(list);
+  drawSelectedTrail();
+  v.scene.requestRender();
+}
+function drawSelectedTrail() {
+  const v = state.viewer;
+  if (state.trailEnt) { v.entities.remove(state.trailEnt); state.trailEnt = null; }
+  const t = state.selectedHex && state.trails.get(state.selectedHex);
+  if (!t || t.length < 2) return;
+  state.trailEnt = v.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArrayHeights(t.flatMap((p) => [p[1], p[0], 10500])), width: 2, material: Cesium.Color.fromCssColorString("#ffb454") } });
+}
+function setFollow(hex) {
+  const v = state.viewer;
+  state.followHex = (state.followHex === hex) ? null : hex;
+  const e = state.followHex && state.entities.get(state.followHex);
+  v.trackedEntity = (e && !e.cluster) ? e : undefined;
+  document.getElementById("follow").classList.toggle("on", !!state.followHex);
   v.scene.requestRender();
 }
 function drawRoute(arc) {
