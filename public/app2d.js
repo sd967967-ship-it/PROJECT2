@@ -128,13 +128,31 @@ function connectWS2d() {
   };
   ws.onclose = () => setTimeout(connectWS2d, 5000);
 }
+async function loadAirports2d() {
+  try {
+    const d = await fetchJSON("/api/airports");
+    for (const a of d.airports || []) {
+      L.circleMarker([a.lat, a.lon], { radius: 5, color: "#57e6ff", weight: 2, fillOpacity: 0.6 })
+        .addTo(state2d.map)
+        .bindTooltip(`${a.iata} · ${a.city} · ${a.nearby || 0} nearby`)
+        .on("click", () => state2d.map.setView([a.lat, a.lon], 7));
+    }
+  } catch { /* decoration only */ }
+}
 (async function boot2d() {
   document.getElementById("globe").hidden = true;
   document.getElementById("map2d").hidden = false;
   initMap();
   document.getElementById("pSub").textContent = "Click any badge on the map.";
   wireSearch2d();
-  document.getElementById("close").addEventListener("click", () => drawRoute2d(null));
+  document.getElementById("close").addEventListener("click", () => { drawRoute2d(null); state2d.selectedHex = null; drawSelectedTrail2d(); });
+  document.getElementById("follow").addEventListener("click", () => {
+    state2d.followHex = (state2d.followHex && state2d.followHex === state2d.selectedHex) ? null : state2d.selectedHex;
+    document.getElementById("follow").classList.toggle("on", !!state2d.followHex);
+  });
+  document.getElementById("zin").addEventListener("click", () => state2d.map.zoomIn());
+  document.getElementById("zout").addEventListener("click", () => state2d.map.zoomOut());
+  loadAirports2d();
   const ok = await live2d();
   if (!ok) { setMode("demo-2d"); upsert2d(DEMO); }
   else connectWS2d();
