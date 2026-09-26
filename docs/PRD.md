@@ -12,15 +12,15 @@ Live map + detail panel served from one free backend + one free frontend host. D
 1. Capacity shown (aircraft seats + typical-load band), never fake live boarded count.
 2. Best-effort global free coverage (not guaranteed every flight).
 3. Avg fare per class via modeled estimator day-1 (no booking links in MVP).
-4. Stack: Node + Express + `ws` backend; Leaflet + OSM frontend (React migration later, see HLD.md).
+4. Stack: Node + Express + `ws` backend; Cesium 3D globe + Esri satellite frontend (built 2026-09-27, replaced Leaflet plan for designer-3D brief).
 
 | ID | As a... | I want to... | So that... | Status |
 |----|---------|--------------|------------|--------|
-| P1 | viewer | see live aircraft on a world map with search by callsign/route/airport | I can find flights fast | planned |
-| P2 | viewer | click a plane → speed, ETA, flying hours, path, capacity, services, fare avgs | I get full context in one panel | planned |
-| P3 | viewer | filter to my viewport with smooth 500+ markers | map stays fast globally | planned |
-| P4 | viewer | see airport departures/arrivals derived from live tracks | I can browse hubs | planned |
-| P5 | builder | run everything on free tiers with no API keys | cost stays zero | planned |
+| P1 | viewer | see live aircraft on a world map with search by callsign/route/airport | I can find flights fast | done 2026-09-27 |
+| P2 | viewer | click a plane → speed, ETA, flying hours, path, capacity, services, fare avgs | I get full context in one panel | done (ETA/fares only when route known; else position-only) |
+| P3 | viewer | filter to my viewport with smooth 500+ markers | map stays fast globally | done (800 cap + requestRenderMode) |
+| P4 | viewer | see airport departures/arrivals derived from live tracks | I can browse hubs | partial (nearest-hub per track; board pending) |
+| P5 | builder | run everything on free tiers with no API keys | cost stays zero | done |
 
 ## Out of scope (explicitly not building yet)
 - Guaranteed every-flight-in-world coverage (needs paid feed/feeders; see HLD.md limits).

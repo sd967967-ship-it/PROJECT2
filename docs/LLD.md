@@ -1,6 +1,6 @@
 # Low-Level Design
 
-> Status 2026-09-26: app code NOT created (user code freeze). Paths below are planned contracts. Only `scripts/auto-sync.ps1`, `start-sync.bat`, `opencode.json`, `README.md` exist.
+> Status 2026-09-27: built. `server/src/*`, `server/data/*`, `server/test/*`, `public/*` live. 10 server + 34 repo tests green.
 
 ## Ingestion Module
 ### Purpose
@@ -58,7 +58,14 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 ## Broadcast Module
 | Function | Signature | Notes |
 |----------|-----------|-------|
-| subscribe | `ws {op:"sub", bbox, filters?} → {op:"diff", t, upsert:[], remove:[]}` throttled 5s | Server culls to bbox, caps 800 markers, supercluster client-side; backpressure: drop to latest snapshot on slow client |
+| subscribe | `ws {op:"sub", bbox, filters?} → {op:"diff", t, upsert:[], remove:[]}` throttled 5s | Server culls to bbox, caps 800 markers; backpressure: drop tick when `bufferedAmount` >1MB |
+
+## Frontend Module (`public/`)
+| Piece | Notes |
+|-------|-------|
+| `index.html` | globe container, search rail, dossier, ticker; IDs in `tests/unit/landingStatic.test.js` U-STATIC-03 |
+| `app.js` | Cesium viewer (Esri/OSM/hybrid), canvas airline badges, flagcdn flags, `/api/snapshot` + ws reconcile, demo fallback |
+| `styles.css` | Space Grotesk + IBM Plex Mono; tokens `--space/--cyan/--amber` |
 
 ## Known limitations
 No guarantee of every flight (oceans/Mode-S gaps); fares modeled until collector has 2–4 weeks data; routes nullable until schedule source added.

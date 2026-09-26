@@ -1,10 +1,10 @@
 # Architecture
 
 ## Tech stack
-- Backend: Node 22, Express, `ws`, `axios` (planned `server/package.json`). No new dep without noting here.
-- Frontend MVP: static `public/` Leaflet 1.9 + OSM/Carto tiles + supercluster via CDN. React+Vite migration later (same `ws` contract).
-- Data: SQLite file or JSON-only MVP; static `server/data/*.json`.
-- Tests: `node --test` under `server/test/`.
+- Backend: Node 22, Express 4, `ws` 8 (`server/package.json`, installed 2026-09-27).
+- Frontend: `public/` Cesium 1.x CDN + Esri World Imagery / OSM / Esri reference overlay + flagcdn flags. No build step.
+- Data: JSON-only (`server/data/*.json`); SQLite/Neon only when fare collector lands.
+- Tests: `npm test` in `server/` (10 green) + root `node tests/run.js` (34 green).
 
 ## Environments
 - dev: `http://localhost:3000` (`npm start` in `server/`), serves API + `public/`.

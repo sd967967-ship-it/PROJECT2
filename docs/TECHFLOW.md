@@ -1,9 +1,9 @@
 # Tech Flow — Live map + detail
 
-1. Browser opens `/` → Leaflet map init, `ws` connect to same origin.
+1. Browser opens `/` → Cesium globe init (Esri satellite), `ws` connect to same origin.
 2. Client sends `{op:"sub", bbox:{lamin,lomin,lamax,lomax}}` on move (debounced 500ms).
 3. `Broadcast Module` culls cached `TrackedFlight[]` to bbox, caps 800, replies `{op:"diff", t, upsert, remove}` every 5s.
-4. Client clusters markers; click marker → `GET /api/flights/:hex` (served from cache, ≤500ms).
+4. Client reconciles billboard entities (canvas airline badges); click entity → `GET /api/flights/:hex` (served from cache, ≤500ms).
 5. `GET /api/flights/:hex` payload: `TrackedFlight` + `capacity` (see LLD.md#capacity-module) + `fares` (see LLD.md#pricing-module) + `services` + great-circle arc points.
 6. Background every 10s: `poller.js` → OpenSky (fallback adsb.lol) → `fuse()` → refresh cache. Browsers never call feeds directly.
 

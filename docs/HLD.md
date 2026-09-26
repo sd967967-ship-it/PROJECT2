@@ -1,17 +1,17 @@
 # High-Level Design
 
 ## System overview
-One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill), fuses them into `TrackedFlight` records with ETA/hours/capacity/fares, caches once, and pushes viewport diffs over `ws` to a static Leaflet frontend. Static JSON covers capacity/services; fare estimator is modeled day-1.
+One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill over rotating hubs), fuses them into `TrackedFlight` records with nearest-hub/capacity/fares, caches once, and pushes viewport diffs over `ws` to a Cesium 3D frontend with Esri satellite imagery. Static JSON covers airports/capacity/services/countries; fare estimator is modeled day-1. Demo fallback keeps the site presentable when feeds are unreachable.
 
 ```
 [OpenSky /api/states/all] ─┐
-[adsb.lol /v2/point] ──────┼→ [Ingestion Module: poll 10s, cache once]
-[OpenFlights static] ──────┘          ↓
-                    [Fusion: ETA/dist/hours] → [Capacity] → [Pricing estimator] → [Services]
+[adsb.lol /v2/point hubs] ─┼→ [Ingestion Module: poll 10s, cache once]
+[static JSON data] ────────┘          ↓
+                    [Fusion: dedupe/nearest-hub] → [Capacity] → [Pricing estimator] → [Services]
                                           ↓
                     [Broadcast Module: ws subscribe(bbox), 5s diff push]
                                           ↓
-                    [public/ Leaflet map + detail panel, supercluster]
+                    [public/ Cesium globe + dossier, requestRenderMode]
 ```
 
 ## Components
@@ -23,7 +23,7 @@ One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill
 | Pricing Module | Modeled fare avg/min/max per class + confidence | Fusion (distance) → detail payload |
 | Services Module | Airline → wifi/meals/baggage/entertainment | Detail payload |
 | Broadcast Module | `ws` viewport subscribe + diff push, backpressure | Fusion cache → browsers |
-| Frontend (`public/`) | Leaflet map, markers, detail panel, search | Broadcast only (never feeds directly) |
+| Frontend (`public/`) | Cesium globe, badges, dossier, search, ticker | Broadcast + detail API only (never feeds directly) |
 | Collector (later) | Daily quote sampling → real fare avgs | Pricing DB → Pricing Module |
 
 ## Data stores
@@ -33,7 +33,7 @@ One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill
 ## External services
 - OpenSky REST (authenticated free, credit-bucketed) — primary live feed.
 - adsb.lol API (free, ODbL, attribution required) — gap-fill Adapter.
-- OSM/Carto tiles (free, usage policy + attribution).
+- OSM/Carto tiles (free, usage policy + attribution). Esri World Imagery replaces Google tiles (no key, compliant; Google direct tiles violate ToS).
 - Vercel (frontend) + Render/Fly free (backend). No AviationStack/AeroDataBox/Skyscanner in MVP.
 
 ## Non-functional requirements

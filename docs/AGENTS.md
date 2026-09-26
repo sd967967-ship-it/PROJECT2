@@ -4,9 +4,9 @@
 Ground rules for any AI agent or human working in `C:\Users\sd967\PROJECT2` (repo `sd967967-ship-it/PROJECT2`).
 
 ## Stack quick facts
-- Language: JavaScript (Node 22+, npm). Planned app code under `server/` + `public/` — not created yet.
+- Language: JavaScript (Node 22+, npm). App code: `server/` (Express+ws, 69 packages) + `public/` (Cesium 3D).
 - Existing code: `scripts/auto-sync.ps1` (PowerShell), `start-sync.bat`.
-- Test command (when app exists): `npm test` in `server/`.
+- Test command: root `node tests/run.js`; server `npm test` in `server/` (10 tests green).
 - Docs: `/docs` is external memory. Read order on session start: AGENTS → PROGRESS → PRD → HLD → LLD → ARCHITECTURE → TECHFLOW → WORKFLOW.
 
 ## Conventions
@@ -28,7 +28,7 @@ Ground rules for any AI agent or human working in `C:\Users\sd967\PROJECT2` (rep
 - Don't let each browser tab call OpenSky/adsb.lol directly (quota). Backend polls once; see HLD.md.
 - Don't claim live passenger counts or real fare history day-1 (see PRD.md non-goals).
 - Don't full-repo scan when PROGRESS.md + LLD.md answer the question.
-- Don't write app code until user lifts the code freeze (2026-09-26 instruction still active at doc creation).
+- Don't write app code until user lifts the code freeze (lifted 2026-09-27 for full build).
 
 ## Escalate / ask before
 - Schema changes (`TrackedFlight`, DB tables).
