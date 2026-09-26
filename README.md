@@ -67,3 +67,13 @@ Rules:
 1. Always pull before starting, push before switching PCs.
 2. Single user can push to `main`. For 2+ people use branches + PRs.
 3. Shared OpenCode config is `opencode.json` in this repo. Local `cli.json` and API keys stay per-PC, never commit secrets.
+
+## Deploy (Render free)
+
+```powershell
+cd $env:USERPROFILE\PROJECT2\server
+npm ci
+npm start  # serves http://localhost:3000
+```
+
+Push to GitHub, create a Render Web Service from this repo (`render.yaml` at root wires it: build `npm ci`, start `npm start`, health `/api/health`). Set `OPENSKY_USER`/`OPENSKY_PASS` in Render env for 10x feed quota (free OpenSky account); without them the app runs anonymous + fallback. Copy `server/.env.example` to `server/.env` for local secrets.
