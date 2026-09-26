@@ -16,21 +16,32 @@ class Poller {
     this.firstSeen = new Map(); // hex -> epochMs, for tracked duration
   }
   getSnapshot() { return this.cache; }
+  healthy() { return this.consecFails === 0; }
   trackedMin(hex) {
     const f = this.firstSeen.get(hex);
     return f ? (Date.now() - f) / 60000 : 0;
   }
   async cycle() {
     if (this.running) return this.cache; // slow fallback must not stack cycles
-    this.running = true;
     const now = Date.now();
+    if (now < this.backoffUntil) {
+      if (now - this.cache.t > this.staleServeMs) this.cache = { ...this.cache, stale: true };
+      return this.cache; // rate-limited: stay quiet so quota recovers
+    }
+    this.running = true;
     try {
       const states = await this.fetchPrimary();
       this.consecFails = 0;
+      this.backoffMs = 0;
+      this.backoffUntil = 0;
       this.store(now, states, "live");
       return this.cache;
     } catch (e) {
       this.consecFails++;
+      if (e && e.code === "FEED_RATE_LIMITED") {
+        this.backoffMs = Math.min(this.backoffMs ? this.backoffMs * 2 : 60000, this.maxBackoffMs);
+        this.backoffUntil = now + this.backoffMs;
+      }
       if (this.fetchFallback && this.consecFails >= 2) {
         try {
           const states = await this.fetchFallback();
