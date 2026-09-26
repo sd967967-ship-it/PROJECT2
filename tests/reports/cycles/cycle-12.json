@@ -1,0 +1,120 @@
+{
+ "cycle": 12,
+ "started": "2026-09-26T19:39:25.981Z",
+ "checks": {
+  "env": {
+   "node": "v26.7.0",
+   "npm": "11.19.0",
+   "serverDeps": true,
+   "port3000": true
+  },
+  "syntax": {
+   "files": 29,
+   "failures": []
+  },
+  "repoSuites": {
+   "ok": true,
+   "suites": [
+    {
+     "tests": 15,
+     "pass": 15,
+     "fail": 0
+    },
+    {
+     "tests": 6,
+     "pass": 6,
+     "fail": 0
+    },
+    {
+     "tests": 2,
+     "pass": 2,
+     "fail": 0
+    },
+    {
+     "tests": 4,
+     "pass": 4,
+     "fail": 0
+    },
+    {
+     "tests": 2,
+     "pass": 2,
+     "fail": 0
+    },
+    {
+     "tests": 2,
+     "pass": 2,
+     "fail": 0
+    },
+    {
+     "tests": 5,
+     "pass": 5,
+     "fail": 0
+    }
+   ],
+   "pass": 36,
+   "fail": 0
+  },
+  "serverSuites": {
+   "ok": true,
+   "tests": 11,
+   "pass": 11,
+   "fail": 0
+  },
+  "api": {
+   "health": 200,
+   "snapStatus": 200,
+   "src": "fallback",
+   "count": 8,
+   "ageSec": 16,
+   "detail200": 200,
+   "detailKeys": [
+    "hex",
+    "callsign",
+    "lat",
+    "lon",
+    "altM",
+    "velKmh",
+    "hdg",
+    "vsMs",
+    "squawk",
+    "onGround",
+    "originCountry",
+    "type",
+    "origin",
+    "dest",
+    "near",
+    "src",
+    "airline",
+    "capacity",
+    "services",
+    "iso",
+    "route",
+    "fares",
+    "eta"
+   ],
+   "missingFields": [],
+   "notFound404": true
+  },
+  "browser": {
+   "cesium": true,
+   "leaflet": false,
+   "globeCanvas": true,
+   "map2dVisible": false,
+   "map2dTiles": 0,
+   "markers2d": 0,
+   "entities3d": null,
+   "noglHidden": true,
+   "badge": "live · fallback",
+   "count": "9",
+   "tileHosts": {
+    "unpkg.com": {
+     "n": 22,
+     "bad": 0
+    }
+   },
+   "failedRequests": [],
+   "jsErrors": []
+  }
+ },
+ "finished": "2026-09-26T19:40:13.228Z"
+}
