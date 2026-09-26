@@ -74,6 +74,7 @@ function build() {
   const app = express();
   app.disable("x-powered-by");
   app.get("/api/health", (req, res) => res.json({ ok: true, src: poller.getSnapshot().src, t: poller.getSnapshot().t }));
+  app.get("/favicon.ico", (req, res) => res.sendFile(path.join(__dirname, "..", "..", "public", "logo.svg")));
   app.get("/api/airports", (req, res) => {
     // Static hubs + live nearby counts derived from the current snapshot (no extra feed cost).
     const s = tracks();
