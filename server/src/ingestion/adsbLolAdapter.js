@@ -45,10 +45,19 @@ async function fetchPoint(lat, lon, radiusNm = 250) {
   return mapAc(body);
 }
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-async function fetchSweep(points, { gapMs = 400, fetchFn = fetchPoint } = {}) {
+async function fetchSweep(points, { gapMs = 1200, fetchFn = fetchPoint } = {}) {
   const out = [];
   for (const [lat, lon] of points) {
-    try { out.push(...await fetchFn(lat, lon, 250)); } catch { /* one cell failing must not sink the sweep */ }
+    try {
+      out.push(...await fetchFn(lat, lon, 250));
+    } catch (e) {
+      if (e && e.code === "FEED_RATE_LIMITED") {
+        const err = new Error("FEED_SWEEP_THROTTLED");
+        err.code = "FEED_SWEEP_THROTTLED"; err.partial = out;
+        throw err; // stop immediately: hammering a throttled feed helps nobody
+      }
+      /* one failed cell must not sink the sweep */
+    }
     if (gapMs) await sleep(gapMs);
   }
   return out;

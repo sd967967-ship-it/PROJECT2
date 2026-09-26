@@ -56,16 +56,26 @@ function tracks() {
 // Worldwide fallback registry: each cycle sweeps one rotating grid group and
 // merges into hex-keyed memory (5min TTL), so coverage accumulates planet-wide.
 const SWEEP_GROUPS = [];
-for (let i = 0; i < WORLD_GRID.length; i += 11) SWEEP_GROUPS.push(WORLD_GRID.slice(i, i + 11));
+for (let i = 0; i < WORLD_GRID.length; i += 8) SWEEP_GROUPS.push(WORLD_GRID.slice(i, i + 8));
 let sweepIdx = 0;
+let sweepCooldownUntil = 0;
 const registry = new Map();
 const REG_TTL_MS = 5 * 60e3;
 const poller = new Poller({
   fetchPrimary: () => fetchOpenSky(),
   fetchFallback: async () => {
-    const group = SWEEP_GROUPS[sweepIdx++ % SWEEP_GROUPS.length];
-    const rows = await fetchSweep(group);
     const now = Date.now();
+    if (now < sweepCooldownUntil && registry.size) return [...registry.values()]; // cooling down: serve memory
+    const group = SWEEP_GROUPS[sweepIdx++ % SWEEP_GROUPS.length];
+    let rows = [];
+    try {
+      rows = await fetchSweep(group);
+    } catch (e) {
+      if (e && e.code === "FEED_SWEEP_THROTTLED") {
+        rows = e.partial || [];
+        sweepCooldownUntil = now + 90000; // back off the throttled feed, keep serving registry
+      } else throw e;
+    }
     for (const r of rows) registry.set(r.hex, { ...r, seenAt: now });
     for (const [k, v] of registry) if (now - v.seenAt > REG_TTL_MS) registry.delete(k);
     while (registry.size > 15000) registry.delete(registry.keys().next().value);
