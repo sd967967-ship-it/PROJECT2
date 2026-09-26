@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SkyTrack — Live 3D Flight Tracking</title>
+<link rel="icon" type="image/svg+xml" href="./logo.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css'" />
@@ -15,7 +16,7 @@
 <div id="map2d" hidden></div>
 <div id="nogl" hidden><p id="noglMsg">3D could not start.</p><p class="muted">Try a recent Chrome, Edge, or Firefox.</p></div>
 <header class="rail">
-  <div class="brand">SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
+  <div class="brand"><img class="logo" src="./logo.svg" alt="SkyTrack logo" />SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
   <input id="search" type="search" placeholder="Search callsign, airline, airport…" aria-label="Search flights" />
   <div class="layers" role="group" aria-label="Imagery">
     <button data-lyr="sat" class="on">Satellite</button><button data-lyr="hybrid">Hybrid</button><button data-lyr="street">Streets</button><button data-lyr="esri">Esri</button>

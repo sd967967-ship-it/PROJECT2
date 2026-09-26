@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="SkyTrack logo">
+  <defs>
+    <radialGradient id="navy" cx="50%" cy="28%" r="95%">
+      <stop offset="0%" stop-color="#16409b"/>
+      <stop offset="55%" stop-color="#0a2563"/>
+      <stop offset="100%" stop-color="#040b26"/>
+    </radialGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#c9d4e8"/>
+      <stop offset="55%" stop-color="#8d9cb8"/>
+      <stop offset="100%" stop-color="#e8eefc"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2f6ff"/>
+      <stop offset="60%" stop-color="#aeb9d2"/>
+      <stop offset="100%" stop-color="#dde5f5"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="34" fill="url(#navy)"/>
+  <!-- radar rings -->
+  <g fill="none" stroke="url(#chrome)" opacity="0.92">
+    <circle cx="128" cy="104" r="62" stroke-width="7"/>
+    <circle cx="128" cy="104" r="44" stroke-width="5"/>
+    <circle cx="128" cy="104" r="27" stroke-width="4"/>
+  </g>
+  <g stroke="url(#chrome)" stroke-width="5" opacity="0.9">
+    <line x1="128" y1="30" x2="128" y2="52"/>
+    <line x1="128" y1="156" x2="128" y2="178"/>
+    <line x1="56" y1="104" x2="78" y2="104"/>
+    <line x1="178" y1="104" x2="200" y2="104"/>
+  </g>
+  <!-- ascending plane -->
+  <g transform="rotate(35 128 104)" fill="url(#chrome)">
+    <path d="M128,58 L135,96 L172,116 L172,124 L135,112 L133,138 L144,146 L144,151 L128,147 L112,151 L112,146 L123,138 L121,112 L84,124 L84,116 L121,96 Z"/>
+  </g>
+  <!-- location pin -->
+  <g transform="translate(76 138)">
+    <path d="M0,-16 C-9,-16 -15,-9 -15,-1 C-15,9 0,20 0,20 C0,20 15,9 15,-1 C15,-9 9,-16 0,-16 Z" fill="url(#chrome)"/>
+    <circle cx="0" cy="-2" r="6" fill="#16409b"/>
+  </g>
+  <text x="128" y="212" text-anchor="middle" font-family="'Space Grotesk',system-ui,sans-serif" font-weight="700" font-size="34" fill="url(#word)" letter-spacing="0.5">SkyTrack</text>
+  <text x="128" y="230" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10.5" fill="#9fb0d0" letter-spacing="2.5">LIVE AEROPLANE LOCATION</text>
+</svg>
