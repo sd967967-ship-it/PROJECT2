@@ -61,8 +61,8 @@ async function show2d(hex) {
   }
   renderDossier(f);
   drawRoute2d(f.route && f.route.arc);
-  const m = state2d.markers.get(hex);
-  if (m) state2d.map.flyTo(m.getLatLng(), Math.max(state2d.map.getZoom(), 5), { duration: 1.2 });
+  const t = state2d.tracks && state2d.tracks.get(hex);
+  if (t) state2d.map.flyTo([t.lat, t.lon], Math.max(state2d.map.getZoom(), 5), { duration: 1.2 });
 }
 function wireSearch2d() {
   const box = document.getElementById("search"), out = document.getElementById("results");
