@@ -21,7 +21,7 @@ $RECYCLE.BIN/
 *.key
 
 # Dependencies (uncomment for your stack)
-# node_modules/
+node_modules/
 # __pycache__/
 # .venv/
 # target/
