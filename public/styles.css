@@ -7,6 +7,13 @@
 html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt); font-family: var(--display); overflow: hidden; }
 #globe { position: fixed; inset: 0; }
 #globe canvas { display: block; }
+#map2d { position: fixed; inset: 0; background: #05080f; }
+#map2d .plane-badge span {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+  background: #0b2036; border: 2px solid var(--cyan); color: var(--txt);
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+}
+#map2d .plane-badge { background: none; border: 0; }
 #nogl { position: fixed; inset: 0; display: grid; place-items: center; background: var(--space); z-index: 50; }
 .rail {
   position: fixed; top: 14px; left: 14px; width: 300px; z-index: 10;
