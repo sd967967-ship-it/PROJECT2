@@ -1,0 +1,29 @@
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OpenCode local state - keep shared opencode.json, ignore machine-local stuff
+.opencode/logs/
+.opencode/cache/
+
+# Env / secrets - never commit
+.env
+.env.*
+*.pem
+*.key
+
+# Dependencies (uncomment for your stack)
+# node_modules/
+# __pycache__/
+# .venv/
+# target/
+# bin/
+# obj/
