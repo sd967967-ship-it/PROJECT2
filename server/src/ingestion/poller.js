@@ -1,11 +1,14 @@
 // Poller: single global loop. Dependencies accepted, never created (test seam).
 class Poller {
-  constructor({ fetchPrimary, fetchFallback, intervalMs = 10000, staleServeMs = 60000 } = {}) {
+  constructor({ fetchPrimary, fetchFallback, intervalMs = 30000, staleServeMs = 60000, maxBackoffMs = 600000 } = {}) {
     if (typeof fetchPrimary !== "function") throw new TypeError("fetchPrimary required");
     this.fetchPrimary = fetchPrimary;
     this.fetchFallback = fetchFallback || null;
     this.intervalMs = intervalMs;
     this.staleServeMs = staleServeMs;
+    this.maxBackoffMs = maxBackoffMs;
+    this.backoffUntil = 0;
+    this.backoffMs = 0;
     this.cache = { t: 0, states: [], src: "none" };
     this.consecFails = 0;
     this.hubIdx = 0;
