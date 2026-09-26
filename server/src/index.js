@@ -4,7 +4,7 @@ const express = require("express");
 const { WebSocketServer } = require("ws");
 const { Poller } = require("./ingestion/poller");
 const { fetchAll: fetchOpenSky } = require("./ingestion/openskyAdapter");
-const { fetchPoint, HUBS } = require("./ingestion/adsbLolAdapter");
+const { WORLD_GRID, fetchSweep } = require("./ingestion/adsbLolAdapter");
 const { fuse } = require("./fusion/fuse");
 const { haversineKm, arcPoints } = require("./fusion/geo");
 const { etaFor } = require("./fusion/eta");
@@ -53,20 +53,24 @@ function tracks() {
   }
   return { t: snap.t || Date.now(), src, tracks: list };
 }
+// Worldwide fallback registry: each cycle sweeps one rotating grid group and
+// merges into hex-keyed memory (5min TTL), so coverage accumulates planet-wide.
+const SWEEP_GROUPS = [];
+for (let i = 0; i < WORLD_GRID.length; i += 11) SWEEP_GROUPS.push(WORLD_GRID.slice(i, i + 11));
+let sweepIdx = 0;
+const registry = new Map();
+const REG_TTL_MS = 5 * 60e3;
 const poller = new Poller({
   fetchPrimary: () => fetchOpenSky(),
   fetchFallback: async () => {
-    // Merge all hub regions so fallback stays dense instead of swinging hub to hub.
-    const out = new Map();
-    for (const h of HUBS) {
-      try {
-        const rows = await fetchPoint(h[0], h[1], 250);
-        for (const r of rows) if (!out.has(r.hex)) out.set(r.hex, r);
-      } catch { /* one hub failing must not sink the rest */ }
-      await new Promise((r) => setTimeout(r, 250));
-    }
-    if (!out.size) throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE" });
-    return [...out.values()];
+    const group = SWEEP_GROUPS[sweepIdx++ % SWEEP_GROUPS.length];
+    const rows = await fetchSweep(group);
+    const now = Date.now();
+    for (const r of rows) registry.set(r.hex, { ...r, seenAt: now });
+    for (const [k, v] of registry) if (now - v.seenAt > REG_TTL_MS) registry.delete(k);
+    while (registry.size > 15000) registry.delete(registry.keys().next().value);
+    if (!registry.size) throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE" });
+    return [...registry.values()];
   },
   intervalMs: Number(process.env.POLL_MS || 30000),
 });
