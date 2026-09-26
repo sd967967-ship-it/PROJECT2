@@ -38,6 +38,8 @@ class Poller {
       }
       if (now - this.cache.t > this.staleServeMs) this.cache = { ...this.cache, stale: true };
       return this.cache;
+    } finally {
+      this.running = false;
     }
   }
   store(now, states, src) {
