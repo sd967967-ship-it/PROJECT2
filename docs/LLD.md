@@ -8,7 +8,7 @@ Single global poller; hides quota/retry/failover. Depth: callers learn one funct
 ### Key files (planned)
 | File | Responsibility |
 |------|----------------|
-| `server/src/ingestion/poller.js` | 30s loop (env `POLL_MS`), rate-limit backoff 1–10min, no-overlap guard, writes snapshot in memory |
+| `server/src/ingestion/poller.js` | 30s loop (env `POLL_MS`), rate-limit backoff 1–10min (primary skipped, keyless sweep continues), no-overlap guard, writes snapshot in memory |
 | `server/src/ingestion/openskyAdapter.js` | `GET /api/states/all`, Basic auth from env, maps to `AircraftState` |
 | `server/src/ingestion/adsbLolAdapter.js` | `WORLD_GRID` 43 cells + `fetchSweep` (rotating groups, 400ms gaps); registry merge lives in `index.js` |
 ### Public interfaces
