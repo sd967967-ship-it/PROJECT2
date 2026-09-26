@@ -34,3 +34,8 @@ test("U-STATIC-05 no tracked secrets in public/", () => {
   assert.doesNotMatch(app, /api[_-]?key\s*[:=]\s*['"][A-Za-z0-9]{8,}/i);
   assert.doesNotMatch(app, /password\s*[:=]\s*['"][^'"]{3,}/i);
 });
+test("U-STATIC-06 loader has fallback CDN and diagnostic box", () => {
+  assert.match(html, /cdn\.jsdelivr\.net\/npm\/cesium/);
+  assert.ok(html.includes('id="noglMsg"'));
+  assert.match(html, /webgl2/);
+});
