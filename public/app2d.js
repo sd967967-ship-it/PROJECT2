@@ -1,13 +1,14 @@
 // SkyTrack 2D fallback map (Leaflet + Esri satellite). Used automatically when
 // WebGL/Cesium is unavailable. Same data, dossier, search, and ticker as 3D via shared.js.
-const state2d = { map: null, markers: new Map(), routeLine: null, all: [], layers: {} };
+const state2d = { map: null, group: null, markers: new Map(), tracks: new Map(), trails: new Map(), routeLine: null, trailLine: null, all: [], layers: {}, selectedHex: null, followHex: null };
 function initMap() {
   const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
   const googleHyb = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
   const sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri World Imagery" });
   const labels = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri" });
   const street = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
-  const map = L.map("map2d", { worldCopyJump: true, minZoom: 2 }).setView([25, 20], 2);
+  const map = L.map("map2d", { worldCopyJump: true, minZoom: 2, zoomControl: false }).setView([25, 20], 2);
+  window.__map2d = map; // debug/test seam
   googleSat.addTo(map);
   state2d.layers = { sat: [googleSat], hybrid: [googleHyb], street: [street], esri: [sat, labels] };
   state2d.active = [googleSat];
