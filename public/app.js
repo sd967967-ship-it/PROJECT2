@@ -123,7 +123,7 @@ async function show(hex) {
   document.getElementById("pVs").textContent = f.vsMs != null ? `${f.vsMs > 0 ? "+" : ""}${f.vsMs.toFixed(1)} m/s` : "–";
   document.getElementById("pNear").textContent = f.near ? `${f.near.iata} · ${f.near.distKm} km` : "–";
   document.getElementById("pCap").textContent = f.capacity ? `${f.capacity.seats} seats` : (f.cap ? `${f.cap} seats` : "–");
-  document.getElementById("pRoute").textContent = f.route ? `${f.route.origin.iata} → ${f.route.dest.iata} · ${f.route.distKm.toLocaleString()} km · ${f.route.remainKm.toLocaleString()} km left` : "Position-only track";
+  document.getElementById("pRoute").textContent = f.route ? `${f.route.origin.iata} → ${f.route.dest.iata} · ${f.route.distKm.toLocaleString()} km · ${f.route.remainKm.toLocaleString()} km left` : (f.origin && f.dest ? `${f.origin} → ${f.dest}` : "Position-only track");
   const sv = f.services && !f.services.unknown ? [f.services.wifi && "Wi-Fi", f.services.meals && (f.services.meals === true ? "Meals" : f.services.meals), f.services.baggage, f.services.entertainment].filter(Boolean) : (f.servicesList || ["Wi-Fi", "Meals", "Baggage", "IFE"]);
   document.getElementById("pServices").innerHTML = sv.map((s) => `<li>${s}</li>`).join("");
   const fares = normalizeFares(f.fares);
