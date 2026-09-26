@@ -67,3 +67,14 @@ test("U-STATIC-08 small yellow plane markers (numbers only for dense clusters)",
   assert.match(planes2d, /#ffd23f/);
   assert.match(planes2d, /disableClusteringAtZoom/);
 });
+test("U-STATIC-09 brand logo + navy/silver gradient theme", () => {
+  assert.match(html, /logo\.svg/);
+  assert.match(html, /rel="icon"/);
+  const css = fs.readFileSync(path.join(__dirname, "..", "..", "public", "styles.css"), "utf8");
+  assert.match(css, /--brand-gradient/);
+  assert.match(css, /--silver-text/);
+  assert.match(css, /\.logo/);
+  const logo = fs.readFileSync(path.join(__dirname, "..", "..", "public", "logo.svg"), "utf8");
+  assert.match(logo, /<svg/);
+  assert.match(logo, /SkyTrack/);
+});
