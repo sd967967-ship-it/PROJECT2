@@ -39,8 +39,8 @@ One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 4
 - Vercel (frontend) + Render/Fly free (backend). No AviationStack/AeroDataBox/Skyscanner in MVP.
 
 ## Non-functional requirements
-- Quota: ≤1 OpenSky states call /10s globally; viewport adsb.lol only on demand, debounced.
-- Latency: snapshot→browser ≤6s; click→detail ≤500ms (cache hit).
+- Quota: ≤1 OpenSky states call /30s globally with exponential backoff to 10min on 429; fallback sweep ≈11 adsb.lol cells per cycle with 400ms gaps.
+- Latency: snapshot→browser ≤6s (fallback sweep accumulates worldwide over ~2min); click→detail ≤500ms (cache hit).
 - Scale MVP: 1 backend instance, 500 visible markers, supercluster; global sweep 60s + viewport refresh 5–10s.
 - Security: no secrets in repo; `GIT_TERMINAL_PROMPT=0` pattern for background jobs; env vars for feed creds.
 - License/ToS: credit OpenSky + adsb.lol (ODbL) + OSM; no FR24 scraping.
