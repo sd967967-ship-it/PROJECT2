@@ -179,7 +179,6 @@ function setFollow(hex) {
   v.scene.requestRender();
 }
 function drawRoute(arc) {
-  const v = state.viewer;
   if (state.routeEnt) { v.entities.remove(state.routeEnt); state.routeEnt = null; }
   if (!arc || !arc.length) return;
   state.routeEnt = v.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArrayHeights(arc.flatMap((p) => [p[1], p[0], 11000])), width: 2, material: Cesium.Color.fromCssColorString("#57e6ff") } });
@@ -195,9 +194,12 @@ async function show(hex) {
     if (!f) return;
   }
   renderDossier(f);
+  state.selectedHex = hex;
   drawRoute(f.route && f.route.arc);
+  drawSelectedTrail();
+  document.getElementById("follow").classList.toggle("on", state.followHex === hex);
   const e = state.entities.get(hex);
-  if (e) state.viewer.flyTo(e, { duration: 1.2 });
+  if (e && !e.cluster) state.viewer.flyTo(e, { duration: 1.2 });
 }
 function wireSearch() {
   const box = document.getElementById("search"), out = document.getElementById("results");
@@ -237,7 +239,19 @@ function connectWS() {
   }
   wireSearch();
   document.querySelectorAll(".layers button").forEach((b) => b.addEventListener("click", () => setLayer(b.dataset.lyr)));
-  document.getElementById("close").addEventListener("click", () => drawRoute(null));
+  document.getElementById("close").addEventListener("click", () => { drawRoute(null); state.selectedHex = null; drawSelectedTrail(); });
+  document.getElementById("follow").addEventListener("click", () => { if (state.selectedHex) setFollow(state.selectedHex); });
+  const stepZoom = (dir) => {
+    const v = state.viewer;
+    try {
+      const h = v.camera.positionCartographic.height;
+      if (dir > 0) v.camera.zoomIn(h * 0.35); else v.camera.zoomOut(h * 0.5);
+      v.scene.requestRender();
+    } catch { /* globe not ready */ }
+  };
+  document.getElementById("zin").addEventListener("click", () => stepZoom(1));
+  document.getElementById("zout").addEventListener("click", () => stepZoom(-1));
+  loadAirports();
   const ok = await live();
   if (!ok) { setMode("demo"); upsert(DEMO); }
   else connectWS();
