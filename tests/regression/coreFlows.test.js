@@ -6,14 +6,14 @@ const path = require("node:path");
 const root = path.join(__dirname, "..", "..");
 const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
 
-test("R-01 landing wires Leaflet app + styles", () => {
+test("R-01 landing wires Cesium app + styles", () => {
   const html = read("public/index.html");
-  assert.match(html, /leaflet\.css/); assert.match(html, /leaflet\.js/);
+  assert.match(html, /Cesium\.js/); assert.match(html, /widgets\.css/);
   assert.match(html, /app\.js/); assert.match(html, /styles\.css/);
 });
 test("R-02 map contract intact", () => {
   const app = read("public/app.js");
-  assert.match(app, /dragging:\s*true/); assert.match(app, /L\.control\.layers/);
+  assert.match(app, /UrlTemplateImageryProvider/); assert.match(app, /ScreenSpaceEventType/);
 });
 test("R-03 search contract intact", () => {
   const app = read("public/app.js");
@@ -21,7 +21,7 @@ test("R-03 search contract intact", () => {
 });
 test("R-04 detail contract intact", () => {
   const app = read("public/app.js");
-  for (const id of ["pSpeed", "pEta", "pCap", "pFares"]) assert.ok(app.includes(id));
+  for (const id of ["pSpeed", "pNear", "pCap", "pFares"]) assert.ok(app.includes(id));
 });
 test("R-05 ws contract intact", () => {
   const { isValidDiff } = require("../mocks/ws.mock");
