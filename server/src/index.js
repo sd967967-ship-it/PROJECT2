@@ -65,7 +65,7 @@ const poller = new Poller({
     if (!out.size) throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE" });
     return [...out.values()];
   },
-  intervalMs: Number(process.env.POLL_MS || 10000),
+  intervalMs: Number(process.env.POLL_MS || 30000),
 });
 function build() {
   const app = express();
