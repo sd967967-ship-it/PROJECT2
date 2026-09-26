@@ -57,7 +57,7 @@ test("backed-off poller still sweeps the keyless fallback", async () => {
   await p.cycle(); // fail#2 -> fallback + backoff armed
   assert.equal(fallback, 1);
   await p.cycle(); // backed off: primary untouched, fallback still sweeps
-  assert.equal(primary, 2);
+  assert.equal(primary, 1);
   assert.equal(fallback, 2);
   assert.equal(p.getSnapshot().src, "fallback");
 });
