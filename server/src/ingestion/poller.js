@@ -24,25 +24,26 @@ class Poller {
   async cycle() {
     if (this.running) return this.cache; // slow fallback must not stack cycles
     const now = Date.now();
-    if (now < this.backoffUntil) {
-      if (now - this.cache.t > this.staleServeMs) this.cache = { ...this.cache, stale: true };
-      return this.cache; // rate-limited: stay quiet so quota recovers
-    }
+    const quiet = now < this.backoffUntil; // rate-limited: skip primary, sweep may continue
     this.running = true;
     try {
-      const states = await this.fetchPrimary();
-      this.consecFails = 0;
-      this.backoffMs = 0;
-      this.backoffUntil = 0;
-      this.store(now, states, "live");
-      return this.cache;
-    } catch (e) {
-      this.consecFails++;
-      if (e && e.code === "FEED_RATE_LIMITED") {
-        this.backoffMs = Math.min(this.backoffMs ? this.backoffMs * 2 : 60000, this.maxBackoffMs);
-        this.backoffUntil = now + this.backoffMs;
+      if (!quiet) {
+        try {
+          const states = await this.fetchPrimary();
+          this.consecFails = 0;
+          this.backoffMs = 0;
+          this.backoffUntil = 0;
+          this.store(now, states, "live");
+          return this.cache;
+        } catch (e) {
+          this.consecFails++;
+          if (e && e.code === "FEED_RATE_LIMITED") {
+            this.backoffMs = Math.min(this.backoffMs ? this.backoffMs * 2 : 60000, this.maxBackoffMs);
+            this.backoffUntil = now + this.backoffMs;
+          }
+        }
       }
-      if (this.fetchFallback && this.consecFails >= 2) {
+      if (this.fetchFallback && (quiet || this.consecFails >= 2)) {
         try {
           const states = await this.fetchFallback();
           this.store(now, states, "fallback");
