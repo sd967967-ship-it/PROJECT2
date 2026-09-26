@@ -51,24 +51,65 @@ function setLayer(name) {
   document.querySelectorAll(".layers button").forEach((b) => b.classList.toggle("on", b.dataset.lyr === name));
   v.scene.requestRender();
 }
+function clusterBadge(n) {
+  const c = document.createElement("canvas"); c.width = c.height = 72;
+  const g = c.getContext("2d");
+  g.fillStyle = "#0b2036";
+  g.beginPath(); g.arc(36, 36, 33, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#ffb454"; g.lineWidth = 4; g.stroke();
+  g.fillStyle = "#eef4ff"; g.font = "700 26px 'IBM Plex Mono', monospace";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(n > 99 ? "99+" : String(n), 36, 38);
+  return c.toDataURL();
+}
+function cellFor(f, cell) { return `${Math.floor(f.lat / cell)}:${Math.floor(f.lon / cell)}`; }
+function ensureSingle(v, f, pos) {
+  let e = state.entities.get(f.hex);
+  if (!e) {
+    const prefix = (f.callsign || "???").trim().slice(0, 3).toUpperCase() || "???";
+    e = v.entities.add({
+      id: f.hex, position: pos,
+      billboard: { image: badge(prefix), width: 34, height: 34, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.4, 2e7, 0.5) },
+      label: { text: f.callsign || f.hex, font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -30), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
+    });
+    state.entities.set(f.hex, e);
+  } else { e.position = pos; }
+  e.track = f; e.cluster = null;
+  return e;
+}
 function upsert(list) {
   const v = state.viewer, seen = new Set();
+  let cell = 20;
+  try { cell = Math.min(20, Math.max(0.75, v.camera.positionCartographic.height / 111320 / 6)); } catch { /* fixed grid */ }
+  const groups = new Map();
   for (const f of list.slice(0, 800)) {
-    seen.add(f.hex);
-    const pos = Cesium.Cartesian3.fromDegrees(f.lon, f.lat, Math.max(f.altM || 10000, 3000));
-    let e = state.entities.get(f.hex);
-    if (!e) {
-      const prefix = (f.callsign || "???").trim().slice(0, 3).toUpperCase() || "???";
-      e = v.entities.add({
-        id: f.hex, position: pos,
-        billboard: { image: badge(prefix), width: 34, height: 34, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.4, 2e7, 0.5) },
-        label: { text: f.callsign || f.hex, font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -30), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
-      });
-      e.track = f;
-      state.entities.set(f.hex, e);
-    } else { e.position = pos; e.track = f; }
+    const k = cellFor(f, cell);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(f);
   }
-  for (const [hex, e] of state.entities) if (!seen.has(hex)) { v.entities.remove(e); state.entities.delete(hex); }
+  for (const [k, g] of groups) {
+    if (g.length === 1) {
+      const f = g[0];
+      ensureSingle(v, f, Cesium.Cartesian3.fromDegrees(f.lon, f.lat, Math.max(f.altM || 10000, 3000)));
+      seen.add(f.hex);
+    } else {
+      const id = `c:${k}`;
+      const lat = g.reduce((a, f) => a + f.lat, 0) / g.length;
+      const lon = g.reduce((a, f) => a + f.lon, 0) / g.length;
+      let e = state.entities.get(id);
+      const pos = Cesium.Cartesian3.fromDegrees(lon, lat, 1200000);
+      if (!e) {
+        e = v.entities.add({
+          id, position: pos,
+          billboard: { image: clusterBadge(g.length), width: 44, height: 44, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.5, 2e7, 0.6) },
+        });
+        state.entities.set(id, e);
+      } else { e.position = pos; e.billboard.image = clusterBadge(g.length); }
+      e.track = null; e.cluster = g;
+      seen.add(id);
+    }
+  }
+  for (const [id, e] of state.entities) if (!seen.has(id)) { v.entities.remove(e); state.entities.delete(id); }
   state.all = list;
   updateTicker(list);
   v.scene.requestRender();
@@ -140,6 +181,13 @@ function connectWS() {
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   handler.setInputAction((click) => {
     const p = viewer.scene.pick(click.position);
-    if (p && p.id && p.id.track) show(p.id.track.hex);
+    if (!p || !p.id) return;
+    if (p.id.track) { show(p.id.track.hex); return; }
+    if (p.id.cluster) { // zoom toward the cluster instead of opening a dossier
+      const g = p.id.cluster;
+      const lat = g.reduce((a, f) => a + f.lat, 0) / g.length;
+      const lon = g.reduce((a, f) => a + f.lon, 0) / g.length;
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, 2500000), duration: 1.2 });
+    }
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 })();
