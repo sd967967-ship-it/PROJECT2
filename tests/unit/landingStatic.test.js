@@ -23,7 +23,7 @@ test("U-STATIC-02 free 3D globe, render-on-demand", () => {
   assert.match(app, /LEFT_CLICK/);
 });
 test("U-STATIC-03 detail panel IDs present", () => {
-  for (const id of ["pSpeed", "pAlt", "pHdg", "pVs", "pNear", "pCap", "pRoute", "pServices", "pFares", "pFlag", "search", "results", "globe"]) {
+  for (const id of ["pSpeed", "pAlt", "pHdg", "pVs", "pNear", "pCap", "pRoute", "pServices", "pFares", "pFlag", "search", "results", "globe", "zin", "zout", "follow"]) {
     assert.ok(html.includes(`id="${id}"`) || app.includes(id), `missing ${id}`);
   }
 });
