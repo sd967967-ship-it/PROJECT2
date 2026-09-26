@@ -9,8 +9,22 @@ const MOCK = [
   { hex:"778899", callsign:"DLH401", lat:50.0, lon:10.0, velKmh:870, hdg:270, origin:"FRA", dest:"ORD", etaUtc:"18:10", remainKm:5200, elapsedH:1.5, totalH:8.9, type:"B744", cap:416, fares:{eco:455,prem:700,biz:1380,first:2210}, services:["Wi-Fi","Meals","2 bags","IFE"] },
   { hex:"aabbcc", callsign:"QFA8", lat:-25.0, lon:150.0, velKmh:910, hdg:120, origin:"SYD", dest:"DFW", etaUtc:"22:55", remainKm:6800, elapsedH:3.8, totalH:14.2, type:"B789", cap:236, fares:{eco:620,prem:940,biz:1780,first:2850}, services:["Wi-Fi","Meals","2 bags","IFE"] },
 ];
-const map = L.map("map").setView([25, 20], 2);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 12, attribution:"© OpenStreetMap" }).addTo(map);
+const map = L.map("map", {
+  dragging: true, scrollWheelZoom: true, doubleClickZoom: true,
+  boxZoom: true, keyboard: true, zoomControl: true,
+  worldCopyJump: true, minZoom: 2, maxBounds: null,
+}).setView([25, 20], 2);
+const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", {
+  subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19,
+  attribution: "Imagery © Google",
+});
+const googleHybrid = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
+  subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19,
+  attribution: "Imagery © Google",
+});
+const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" });
+googleSat.addTo(map);
+L.control.layers({ Satellite: googleSat, Hybrid: googleHybrid, Streets: osm }).addTo(map);
 const markers = new Map(); let arcs = [];
 function clearArcs(){ arcs.forEach(a => map.removeLayer(a)); arcs = []; }
 function arcPoints(a, b, n = 40) {
