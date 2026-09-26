@@ -16,6 +16,7 @@ _Last updated: 2026-09-27_
 - Plane markers — 2026-09-27 — singles render as heading-rotated plane silhouettes (canvas billboard 3D, SVG 2D); numbered badges kept for clusters only; verified 402-track Europe screenshot.
 - Yellow small planes — 2026-09-27 — `#ffd23f` silhouettes, 30px footprint; clustering relaxed (3D groups ≤30 stay planes, 2D radius 25 + decluster at zoom 6); verified 13 yellow planes over India, 0 numbered badges at that zoom.
 - Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
+- QA rounds 2+3 — 2026-09-27 — 15 cycles (13–27), 825/825 checks green; zoom + favicon fixes verified; feed stable ~800 merged tracks; release verdict conditionally-ready; `tests/reports/QA-FINAL.md`.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
