@@ -12,7 +12,8 @@ Live map + detail panel served from one free backend + one free frontend host. D
 1. Capacity shown (aircraft seats + typical-load band), never fake live boarded count.
 2. Best-effort global free coverage (not guaranteed every flight).
 3. Avg fare per class via modeled estimator day-1 (no booking links in MVP).
-4. Stack: Node + Express + `ws` backend; Cesium 3D globe + Esri satellite frontend (built 2026-09-27, replaced Leaflet plan for designer-3D brief).
+4. Stack: Node + Express + `ws` backend; Cesium 3D globe + Google satellite frontend (Leaflet 2D fallback shares the dossier).
+5. Multimodal (adopted 2026-09-27, see `multimodal-space-plan.md`): one `TrackingSource` seam, Adapters per domain. Space + solar ship keyless; ships via keyless AIS, trains via keyless NTES clients, metro/bus per open city; key-gated sources stay parked until the user pastes keys (agent never creates accounts).
 
 | ID | As a... | I want to... | So that... | Status |
 |----|---------|--------------|------------|--------|
@@ -21,12 +22,17 @@ Live map + detail panel served from one free backend + one free frontend host. D
 | P3 | viewer | filter to my viewport with smooth markers | map stays fast globally | done (1200 cap + clustering + requestRenderMode) |
 | P4 | viewer | see airport departures/arrivals derived from live tracks | I can browse hubs | partial (nearest-hub per track; board pending) |
 | P5 | builder | run everything on free tiers with no API keys | cost stays zero | done |
+| P6 | viewer | track satellites live + tour the solar system with moons | space is as explorable as sky | planned (Phase 1, keyless) |
+| P7 | viewer | track ships live worldwide | sea joins the same globe UI | planned (keyless AIS verified 2026-09-27) |
+| P8 | viewer | track Indian trains live + browse worldwide transit stops | ground joins the same UI | planned (keyless NTES clients; static stops worldwide) |
+| P9 | viewer | switch Sky/Sea/Streets/Space modes without relearning the UI | one app for every domain | planned |
 
 ## Out of scope (explicitly not building yet)
 - Guaranteed every-flight-in-world coverage (needs paid feed/feeders; see HLD.md limits).
 - True live passengers-boarded (no free API exposes it).
 - Real historical fare averages day-1 (needs 2–4 weeks of collected quotes; estimator is labeled modeled).
 - Booking/affiliate checkout, login/alerts, playback history, dark mode, native apps.
+- Live railways outside NTES-covered networks; live AIS beyond volunteer/keyless coverage; metro-live cities without open GTFS-RT (adapters park until a feed or key exists).
 
 ## Success metrics
 - Map renders ≤3s on broadband, pans at 30fps+ with 500 markers.
