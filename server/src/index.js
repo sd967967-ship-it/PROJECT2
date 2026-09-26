@@ -12,11 +12,14 @@ const { getCapacity } = require("./capacity");
 const { estimateFares } = require("./pricing");
 const { airlineOf, getServices } = require("./services");
 const { attach } = require("./broadcast");
+const { RouteCache } = require("./routes");
 
 const AIRPORTS = require("../data/airports.json");
 const COUNTRIES = require("../data/countries.json");
 const DEMO = require("../data/demo-flights.json");
 const byIata = new Map(AIRPORTS.map((a) => [a.iata, a]));
+const byIcao = new Map(AIRPORTS.map((a) => [a.icao, a]));
+const routes = new RouteCache();
 
 function isoFor(track, airline) {
   if (airline && airline.iso) return airline.iso;
@@ -75,11 +78,34 @@ function build() {
     const s = tracks();
     res.json({ t: s.t, src: s.src, count: s.tracks.length, tracks: s.tracks });
   });
-  app.get("/api/flights/:hex", (req, res) => {
+  app.get("/api/flights/:hex", async (req, res) => {
     const s = tracks();
     const t = s.tracks.find((x) => x.hex === String(req.params.hex).toLowerCase());
     if (!t) return res.status(404).json({ error: "stale, retry" });
-    res.json({ t: s.t, src: s.src, flight: enrich(t) });
+    const flight = enrich(t);
+    // Click-to-resolve: destination + ETA + company via cached OpenSky history.
+    // Only when the primary feed is healthy, so clicks never burn throttled quota.
+    if (!flight.route && poller.healthy() && flight.src !== "demo") {
+      try {
+        const r = await routes.resolve(flight.hex);
+        const d = r && r.destIcao && byIcao.get(r.destIcao.toUpperCase());
+        if (d) {
+          const o = (r.originIcao && byIcao.get(r.originIcao.toUpperCase())) || null;
+          const distKm = o ? Math.round(haversineKm([o.lat, o.lon], [d.lat, d.lon])) : null;
+          const remainKm = Math.round(haversineKm([flight.lat, flight.lon], [d.lat, d.lon]));
+          flight.origin = o ? o.iata : (r.originIcao || null);
+          flight.dest = d.iata;
+          flight.eta = etaFor(remainKm, flight.velKmh);
+          flight.fares = distKm != null ? estimateFares(distKm) : null;
+          flight.route = {
+            origin: o || { iata: r.originIcao, lat: flight.lat, lon: flight.lon },
+            dest: d, distKm, remainKm,
+            arc: o ? arcPoints([o.lat, o.lon], [d.lat, d.lon], 48) : null,
+          };
+        }
+      } catch { /* position-only on any failure */ }
+    }
+    res.json({ t: s.t, src: s.src, flight });
   });
   app.use(express.static(path.join(__dirname, "..", "..", "public")));
   return app;
