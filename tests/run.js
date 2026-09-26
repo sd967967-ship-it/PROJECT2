@@ -1,6 +1,6 @@
 // Test-only orchestrator (spawns node:test per suite; E2E excluded until Playwright installed).
 const { spawnSync } = require("node:child_process");
-const suites = { unit: ["tests/unit"], integration: ["tests/integration"], network: ["tests/network"], a11y: ["tests/a11y"], perf: ["tests/perf"], security: ["tests/security"], regression: ["tests/regression"] };
+const suites = { unit: ["tests/unit/*.test.js"], integration: ["tests/integration/*.test.js"], network: ["tests/network/*.test.js"], a11y: ["tests/a11y/*.test.js"], perf: ["tests/perf/*.test.js"], security: ["tests/security/*.test.js"], regression: ["tests/regression/*.test.js"] };
 const want = process.argv[2] ? process.argv[2].split(",") : Object.keys(suites);
 let fail = 0;
 for (const s of want) {

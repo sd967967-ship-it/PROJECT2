@@ -5,7 +5,7 @@ Test-only setup. App code lives in `public/` (+ future `server/`); nothing here 
 ## Commands (later; NOT run now)
 - All runnable suites: `node tests/run.js`
 - One suite: `node tests/run.js unit` (or integration, network, a11y, perf, security, regression)
-- Direct: `node --test tests/unit tests/integration tests/network tests/a11y tests/perf tests/security tests/regression`
+- Direct: `node --test "tests/unit/*.test.js" "tests/integration/*.test.js" "tests/network/*.test.js" "tests/a11y/*.test.js" "tests/perf/*.test.js" "tests/security/*.test.js" "tests/regression/*.test.js"`
 - E2E (needs install first): see `tests/e2e/README.md`
 
 ## Layout
