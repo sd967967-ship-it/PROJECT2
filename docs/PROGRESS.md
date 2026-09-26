@@ -8,7 +8,7 @@ _Last updated: 2026-09-26_
 - Docs system created — 2026-09-26 — this `/docs` set; app code still frozen.
 
 ## 🚧 In progress
-- None (code freeze active since 2026-09-26; docs-only).
+- Landing page MVP — `public/index.html:1`, `public/app.js:1`, `public/styles.css:1` — Leaflet + mock snapshot + backend ws hook, pending browser check.
 
 ## ⏭️ Next up
 1. Lift code freeze → scaffold `server/` (poller, fuse/geo/eta, capacity/pricing/services JSON, broadcast, `index.js`) + `server/test/`.
