@@ -20,7 +20,10 @@
 | Service | Why | Key needed MVP? |
 |---------|-----|-----------------|
 | OpenSky REST | primary live positions | optional (anonymous works, auth raises quota) |
-| adsb.lol | gap-fill, unfiltered | no (ODbL attribution) |
+| adsb.lol | fallback gap-fill, unfiltered, no key (ODbL attribution) | no |
+| ADSB One (`api.adsb.one`) | tried 2026-09-27: Cloudflare 403 even server-side | pending arrangement |
+| airplanes.live | tried 2026-09-27: 403, requires contacting them (feeder access) | pending |
+| adsb.fi | tried 2026-09-27: no compatible v2 endpoint found | pending |
 | OpenFlights data | airports/airlines/routes static | no (bundled subset) |
 | Amadeus/AviationStack/Skyscanner | schedules/quotes/booking | no — excluded from MVP |
 
