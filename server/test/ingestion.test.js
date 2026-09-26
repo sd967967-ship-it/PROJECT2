@@ -1,0 +1,34 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { mapStates } = require("../src/ingestion/openskyAdapter");
+const { mapAc } = require("../src/ingestion/adsbLolAdapter");
+const { Poller } = require("../src/ingestion/poller");
+
+test("opensky maps state vector", () => {
+  const out = mapStates({ states: [["a1b2c3", "AIC302 ", "India", 1, 1727220000, 62.5, 28.1, 11500, false, 244.4, 290, 0, null, 11600, "1234", false, 0]] });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].callsign, "AIC302");
+  assert.equal(out[0].src, "opensky");
+});
+test("opensky drops rows without lat/lon", () => {
+  assert.deepEqual(mapStates({ states: [["x", null, null, 1, 1, null, null, 1, false, 1, 1, 1, null, 1, null, false, 0]] }), []);
+});
+test("adsb.lol maps ac rows with unit conversion", () => {
+  const out = mapAc({ ac: [{ hex: "A1B2C3", flight: "BAW249 ", lat: 45.5, lon: -20, alt_baro: 38000, gs: 450, track: 260, t: "B77W", seen: 1 }] });
+  assert.equal(out[0].hex, "a1b2c3");
+  assert.equal(out[0].type, "B77W");
+  assert.ok(Math.abs(out[0].velMs - 231.5) < 1);
+});
+test("poller caches, falls back, serves stale", async () => {
+  let n = 0;
+  const p = new Poller({
+    fetchPrimary: async () => { n++; if (n < 3) throw Object.assign(new Error("x"), { code: "FEED_OFFLINE" }); return [{ hex: "a", lat: 1, lon: 1 }]; },
+    fetchFallback: async () => [{ hex: "b", lat: 2, lon: 2 }],
+  });
+  await p.cycle();
+  assert.equal(p.getSnapshot().states.length, 0);
+  await p.cycle(); // 2nd fail -> fallback
+  assert.equal(p.getSnapshot().src, "fallback");
+  await p.cycle(); // primary recovers
+  assert.equal(p.getSnapshot().src, "live");
+});
