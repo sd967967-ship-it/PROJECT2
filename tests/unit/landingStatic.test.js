@@ -57,7 +57,7 @@ test("U-STATIC-07 automatic 2D fallback path", () => {
   assert.match(shared, /renderDossier/);
   assert.match(shared, /updateTicker/);
 });
-test("U-STATIC-08 plane-shaped markers (numbered badges only for clusters)", () => {
+test("U-STATIC-08 small yellow plane markers (numbers only for dense clusters)", () => {
   assert.match(app, /drawPlane/);
   assert.match(app, /planeBillboard/);
   assert.match(app, /#ffd23f/);
