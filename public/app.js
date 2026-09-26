@@ -1,20 +1,38 @@
 // SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
 const state = { viewer: null, entities: new Map(), routeEnt: null, mode: "demo", all: [], imagery: {} };
 
-function badge(prefix) {
-  const c = document.createElement("canvas"); c.width = c.height = 72;
-  const g = c.getContext("2d");
-  let h = 0; for (const ch of prefix) h = (h * 31 + ch.charCodeAt(0)) % 360;
-  const grad = g.createLinearGradient(0, 0, 72, 72);
-  grad.addColorStop(0, "#0b2036"); grad.addColorStop(1, `hsl(${h} 70% 38%)`);
-  g.fillStyle = grad;
+function drawPlane(g, hdgDeg) {
+  // Top-down silhouette pointing north, rotated to the true heading.
+  const hdg = ((Number(hdgDeg) || 0) % 360 + 360) % 360;
+  g.save();
+  g.translate(36, 36);
+  g.rotate(hdg * Math.PI / 180);
   g.beginPath();
-  if (g.roundRect) g.roundRect(2, 2, 68, 68, 16); else g.rect(2, 2, 68, 68);
-  g.fill();
-  g.strokeStyle = "#57e6ff"; g.lineWidth = 3; g.stroke();
-  g.fillStyle = "#eef4ff"; g.font = "700 24px 'IBM Plex Mono', monospace";
-  g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText(prefix.slice(0, 3), 36, 38);
+  g.moveTo(0, -26);            // nose
+  g.lineTo(5, -8);             // fuselage right
+  g.lineTo(26, 4);             // right wing tip
+  g.lineTo(26, 9);
+  g.lineTo(5, 4);
+  g.lineTo(4, 18);             // tail right
+  g.lineTo(12, 22);            // right tailplane
+  g.lineTo(12, 25);
+  g.lineTo(0, 22);
+  g.lineTo(-12, 25);
+  g.lineTo(-12, 22);
+  g.lineTo(-4, 18);
+  g.lineTo(-5, 4);
+  g.lineTo(-26, 9);
+  g.lineTo(-26, 4);
+  g.lineTo(-5, -8);
+  g.closePath();
+  g.fillStyle = "#eef4ff";
+  g.strokeStyle = "#0b2036"; g.lineWidth = 3;
+  g.fill(); g.stroke();
+  g.restore();
+}
+function planeBillboard(hdg) {
+  const c = document.createElement("canvas"); c.width = c.height = 72;
+  drawPlane(c.getContext("2d"), hdg);
   return c.toDataURL();
 }
 function initViewer() {
