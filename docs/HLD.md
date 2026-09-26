@@ -23,7 +23,7 @@ One Node poller fetches live ADS-B snapshots (OpenSky primary, adsb.lol gap-fill
 | Pricing Module | Modeled fare avg/min/max per class + confidence | Fusion (distance) → detail payload |
 | Services Module | Airline → wifi/meals/baggage/entertainment | Detail payload |
 | Broadcast Module | `ws` viewport subscribe + diff push, backpressure | Fusion cache → browsers |
-| Frontend (`public/`) | Cesium globe, badges, dossier, search, ticker | Broadcast + detail API only (never feeds directly) |
+| Frontend (`public/`) | Cesium globe w/ automatic Leaflet 2D fallback, dossier, search, ticker | Broadcast + detail API only (never feeds directly) |
 | Collector (later) | Daily quote sampling → real fare avgs | Pricing DB → Pricing Module |
 
 ## Data stores
