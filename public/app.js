@@ -96,14 +96,20 @@ function cellFor(f, cell) { return `${Math.floor(f.lat / cell)}:${Math.floor(f.l
 function ensureSingle(v, f, pos) {
   let e = state.entities.get(f.hex);
   if (!e) {
-    const prefix = (f.callsign || "???").trim().slice(0, 3).toUpperCase() || "???";
     e = v.entities.add({
       id: f.hex, position: pos,
-      billboard: { image: badge(prefix), width: 34, height: 34, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.4, 2e7, 0.5) },
-      label: { text: f.callsign || f.hex, font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -30), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
+      billboard: { image: planeBillboard(f.hdg), width: 38, height: 38, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.4, 2e7, 0.5), alignedAxis: Cesium.Cartesian3.ZERO },
+      label: { text: f.callsign || f.hex, font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -32), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
     });
     state.entities.set(f.hex, e);
-  } else { e.position = pos; }
+    e._hdg = f.hdg;
+  } else {
+    e.position = pos;
+    if (f.hdg != null && (e._hdg == null || Math.abs(f.hdg - e._hdg) > 5)) {
+      e.billboard.image = planeBillboard(f.hdg);
+      e._hdg = f.hdg;
+    }
+  }
   e.track = f; e.cluster = null;
   return e;
 }
