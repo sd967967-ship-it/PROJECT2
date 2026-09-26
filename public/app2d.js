@@ -93,7 +93,10 @@ async function show2d(hex) {
     if (!f) return;
   }
   renderDossier(f);
+  state2d.selectedHex = hex;
   drawRoute2d(f.route && f.route.arc);
+  drawSelectedTrail2d();
+  document.getElementById("follow").classList.toggle("on", state2d.followHex === hex);
   const t = state2d.tracks && state2d.tracks.get(hex);
   if (t) state2d.map.flyTo([t.lat, t.lon], Math.max(state2d.map.getZoom(), 5), { duration: 1.2 });
 }
