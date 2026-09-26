@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkyTrack — Live Worldwide Flight Tracking</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">✈ SkyTrack <span class="badge" id="modeBadge">demo data</span></div>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search callsign, route, airport… (e.g. AIC302, DEL–LHR)" />
+  </div>
+  <div class="stats"><span id="count">0</span> airborne</div>
+</header>
+<main class="layout">
+  <section class="mapwrap"><div id="map"></div></section>
+  <aside class="panel" id="panel">
+    <h2 id="pTitle">Select a flight</h2>
+    <p class="muted" id="pSub">Click any plane marker to see speed, ETA, hours, capacity, services and fare estimates.</p>
+    <div class="grid">
+      <div><label>Speed</label><b id="pSpeed">–</b></div>
+      <div><label>Heading</label><b id="pHdg">–</b></div>
+      <div><label>ETA (UTC)</label><b id="pEta">–</b></div>
+      <div><label>Remaining</label><b id="pRemain">–</b></div>
+      <div><label>Elapsed / Total</label><b id="pHours">–</b></div>
+      <div><label>Capacity</label><b id="pCap">–</b></div>
+    </div>
+    <h3>Route</h3>
+    <div id="pRoute" class="muted">–</div>
+    <h3>Services</h3>
+    <ul id="pServices" class="chips"></ul>
+    <h3>Avg fare / class <span class="muted-sm">(modeled)</span></h3>
+    <table class="fares"><tbody id="pFares"></tbody></table>
+    <p class="fine">Capacity = aircraft seats + typical-load band (estimate, not live boarded). Fares = distance-modeled estimates until collector history lands. See docs/PRD.md.</p>
+  </aside>
+</main>
+<footer class="foot">SkyTrack MVP · Leaflet + OSM · Demo snapshot until backend ws lands · Data: OpenSky/adsb.lol (credit required in prod)</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
