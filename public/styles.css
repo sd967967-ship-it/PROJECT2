@@ -77,6 +77,23 @@ html, body { margin: 0; height: 100%; background: radial-gradient(120% 100% at 5
 }
 .ticker #count { color: var(--cyan); font-size: 16px; }
 .ticker .src { margin-left: auto; color: var(--mut); font-size: 11px; }
+.zoomctl {
+  position: fixed; right: 14px; bottom: 64px; z-index: 10;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.zoomctl button {
+  width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
+  background: var(--brand-gradient); border: 1px solid #3a5aa8;
+  color: var(--silver-hi); font-size: 22px; line-height: 1;
+  box-shadow: 0 8px 32px rgba(2, 6, 20, .55);
+}
+.zoomctl button:hover { border-color: var(--cyan); }
+#follow {
+  margin-top: 10px; width: 100%; padding: 9px 0; border-radius: 9px; cursor: pointer;
+  background: transparent; border: 1px solid var(--cyan); color: var(--cyan);
+  font-family: var(--display); font-size: 13px; font-weight: 700;
+}
+#follow.on { background: var(--cyan); color: #04121a; }
 @media (max-width: 760px) {
   .rail { width: calc(100vw - 28px); }
   .dossier { top: auto; bottom: 64px; right: 14px; left: 14px; width: auto; max-height: 44vh; }

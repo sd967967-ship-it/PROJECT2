@@ -14,6 +14,10 @@
 <body>
 <div id="globe"></div>
 <div id="map2d" hidden></div>
+<div class="zoomctl" role="group" aria-label="Map zoom">
+  <button id="zin" aria-label="Zoom in">+</button>
+  <button id="zout" aria-label="Zoom out">−</button>
+</div>
 <div id="nogl" hidden><p id="noglMsg">3D could not start.</p><p class="muted">Try a recent Chrome, Edge, or Firefox.</p></div>
 <header class="rail">
   <div class="brand"><img class="logo" src="./logo.svg" alt="SkyTrack logo" />SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
@@ -38,6 +42,7 @@
     <div><label>Capacity</label><b id="pCap">–</b></div>
   </div>
   <h3>Route</h3><div id="pRoute" class="muted">Position-only track</div>
+  <button id="follow">Follow this flight</button>
   <h3>Services</h3><ul id="pServices" class="chips"></ul>
   <h3>Fares <span class="muted-sm">modeled avg</span></h3>
   <table class="fares"><tbody id="pFares"></tbody></table>
