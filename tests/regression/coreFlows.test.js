@@ -19,9 +19,9 @@ test("R-03 search contract intact", () => {
   const app = read("public/app.js");
   assert.match(app, /getElementById\("search"\)/); assert.match(app, /toUpperCase\(\).includes/);
 });
-test("R-04 detail contract intact", () => {
-  const app = read("public/app.js");
-  for (const id of ["pSpeed", "pNear", "pCap", "pFares"]) assert.ok(app.includes(id));
+test("R-04 detail contract intact (shared dossier)", () => {
+  const shared = read("public/shared.js");
+  for (const id of ["pSpeed", "pNear", "pCap", "pFares"]) assert.ok(shared.includes(id));
 });
 test("R-05 ws contract intact", () => {
   const { isValidDiff } = require("../mocks/ws.mock");
