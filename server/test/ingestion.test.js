@@ -19,7 +19,15 @@ test("adsb.lol maps ac rows with unit conversion", () => {
   assert.equal(out[0].type, "B77W");
   assert.ok(Math.abs(out[0].velMs - 231.5) < 1);
 });
-test("poller caches, falls back, serves stale", async () => {
+test("poller never stacks overlapping cycles", async () => {
+  let calls = 0;
+  const p = new Poller({
+    fetchPrimary: async () => { calls++; await new Promise((r) => setTimeout(r, 50)); return [{ hex: "a", lat: 1, lon: 1 }]; },
+  });
+  await Promise.all([p.cycle(), p.cycle(), p.cycle()]);
+  assert.equal(calls, 1);
+  assert.equal(p.getSnapshot().src, "live");
+});
   let n = 0;
   const p = new Poller({
     fetchPrimary: async () => { n++; if (n < 3) throw Object.assign(new Error("x"), { code: "FEED_OFFLINE" }); return [{ hex: "a", lat: 1, lon: 1 }]; },
