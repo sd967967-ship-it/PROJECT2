@@ -1,7 +1,7 @@
 # High-Level Design
 
 ## System overview
-One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 43-cell sweep merged into a 5min registry as fallback), fuses them into `TrackedFlight` records with nearest-hub/capacity/fares, caches once, and pushes viewport diffs over `ws` to a Cesium 3D frontend with Google satellite imagery. Static JSON covers airports/capacity/services/countries; fare estimator is modeled day-1. Demo fallback keeps the site presentable when feeds are unreachable.
+One Node poller per domain fetches live snapshots through `TrackingSource` Adapters (sky: OpenSky/adsb.lol; sea: keyless AIS; streets: NTES/GTFS-RT per city; space: CelesTrak TLE), fuses them into domain records, caches once, and pushes viewport diffs over `ws` to one shared UI (globe, dossier, search, ticker, trails, follow). A mode switcher swaps the Adapter, never the UI. Static JSON covers airports/capacity/services/countries/stops; fare estimator is modeled day-1. Demo fallback keeps the site presentable when feeds are unreachable. Space gets a dedicated solar scene (Sun + 8 planets + major moons, math-only) with a live TLE belt.
 
 ```
 [OpenSky /api/states/all] ─┐ (global when healthy)
@@ -25,6 +25,8 @@ One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 4
 | Pricing Module | Modeled fare avg/min/max per class + confidence | Fusion (distance) → detail payload |
 | Services Module | Airline → wifi/meals/baggage/entertainment | Detail payload |
 | Broadcast Module | `ws` viewport subscribe + diff push, backpressure | Fusion cache → browsers |
+| TrackingSource Module (planned) | `getSnapshot(domain, bbox?) -> movers[]`; one seam, Adapters per domain | Adapters → Fusion/UI |
+| Space Module (planned) | TLE fetch/cache + propagation + solar scene + satellite dossier | CelesTrak → globe/UI |
 | Frontend (`public/`) | Cesium globe w/ automatic Leaflet 2D fallback, dossier, search, ticker | Broadcast + detail API only (never feeds directly) |
 | Collector (later) | Daily quote sampling → real fare avgs | Pricing DB → Pricing Module |
 
@@ -34,7 +36,11 @@ One Node poller fetches live ADS-B snapshots (OpenSky global primary; adsb.lol 4
 
 ## External services
 - OpenSky REST (authenticated free, credit-bucketed) — primary live feed.
-- adsb.lol API (free, ODbL, attribution required) — gap-fill Adapter.
+- adsb.lol API (free, ODbL, attribution required) — 43-cell sweep fallback Adapter.
+- aiscast AIS (verified keyless 2026-09-27: live vessels bbox endpoint) — Sea Adapter source.
+- CelesTrak TLE (verified keyless 2026-09-27, fresh epochs) — Space Adapter source.
+- NTES unofficial clients (keyless, polite polling + cache mandatory) — Rail Adapter pattern.
+- GTFS-RT per-city registry (Madison/GZM/German/French keyless feeds verified 2026-09-27) — Streets live vehicles; static stops worldwide via open GTFS data.
 - Imagery: Google satellite default (direct tiles; production needs Maps API key), Esri World Imagery + OSM selectable (compliant free options).
 - Vercel (frontend) + Render/Fly free (backend). No AviationStack/AeroDataBox/Skyscanner in MVP.
 
