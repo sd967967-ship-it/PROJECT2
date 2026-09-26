@@ -3,42 +3,46 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SkyTrack — Live Worldwide Flight Tracking</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<title>SkyTrack — Live 3D Flight Tracking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/cesium@1/Build/Cesium/Widgets/widgets.css" />
 <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">✈ SkyTrack <span class="badge" id="modeBadge">demo data</span></div>
-  <div class="search">
-    <input id="search" type="search" placeholder="Search callsign, route, airport… (e.g. AIC302, DEL–LHR)" />
+<div id="globe"></div>
+<div id="nogl" hidden><p>3D needs WebGL. Try a recent Chrome, Edge, or Firefox.</p></div>
+<header class="rail">
+  <div class="brand">SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
+  <input id="search" type="search" placeholder="Search callsign, airline, airport…" aria-label="Search flights" />
+  <div class="layers" role="group" aria-label="Imagery">
+    <button data-lyr="sat" class="on">Satellite</button><button data-lyr="hybrid">Hybrid</button><button data-lyr="street">Streets</button>
   </div>
-  <div class="stats"><span id="count">0</span> airborne</div>
+  <ul id="results" aria-live="polite"></ul>
 </header>
-<main class="layout">
-  <section class="mapwrap"><div id="map"></div></section>
-  <aside class="panel" id="panel">
-    <h2 id="pTitle">Select a flight</h2>
-    <p class="muted" id="pSub">Click any plane marker to see speed, ETA, hours, capacity, services and fare estimates.</p>
-    <div class="grid">
-      <div><label>Speed</label><b id="pSpeed">–</b></div>
-      <div><label>Heading</label><b id="pHdg">–</b></div>
-      <div><label>ETA (UTC)</label><b id="pEta">–</b></div>
-      <div><label>Remaining</label><b id="pRemain">–</b></div>
-      <div><label>Elapsed / Total</label><b id="pHours">–</b></div>
-      <div><label>Capacity</label><b id="pCap">–</b></div>
-    </div>
-    <h3>Route</h3>
-    <div id="pRoute" class="muted">–</div>
-    <h3>Services</h3>
-    <ul id="pServices" class="chips"></ul>
-    <h3>Avg fare / class <span class="muted-sm">(modeled)</span></h3>
-    <table class="fares"><tbody id="pFares"></tbody></table>
-    <p class="fine">Capacity = aircraft seats + typical-load band (estimate, not live boarded). Fares = distance-modeled estimates until collector history lands. See docs/PRD.md.</p>
-  </aside>
-</main>
-<footer class="foot">SkyTrack MVP · Leaflet + OSM · Demo snapshot until backend ws lands · Data: OpenSky/adsb.lol (credit required in prod)</footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<aside class="dossier" id="panel" aria-live="polite">
+  <button id="close" aria-label="Close flight details">×</button>
+  <div class="flight-head">
+    <img id="pFlag" alt="" hidden />
+    <div><h2 id="pTitle">Pick a flight</h2><p class="muted" id="pSub">Click any badge on the globe.</p></div>
+  </div>
+  <div class="grid">
+    <div><label>Speed</label><b id="pSpeed">–</b></div>
+    <div><label>Altitude</label><b id="pAlt">–</b></div>
+    <div><label>Heading</label><b id="pHdg">–</b></div>
+    <div><label>Vertical</label><b id="pVs">–</b></div>
+    <div><label>Nearest hub</label><b id="pNear">–</b></div>
+    <div><label>Capacity</label><b id="pCap">–</b></div>
+  </div>
+  <h3>Route</h3><div id="pRoute" class="muted">Position-only track</div>
+  <h3>Services</h3><ul id="pServices" class="chips"></ul>
+  <h3>Fares <span class="muted-sm">modeled avg</span></h3>
+  <table class="fares"><tbody id="pFares"></tbody></table>
+  <p class="fine" id="pFine">Capacity is aircraft seats plus a typical-load band, an estimate. Fares are distance-modeled until collected history lands.</p>
+</aside>
+<footer class="ticker"><span id="count">0</span> airborne · <span id="topList"></span><span class="src">Data OpenSky + adsb.lol · Imagery Esri + OSM · Flags flagcdn</span></footer>
+<script>window.CESIUM_BASE_URL = "https://unpkg.com/cesium@1/Build/Cesium/";</script>
+<script src="https://unpkg.com/cesium@1/Build/Cesium/Cesium.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
