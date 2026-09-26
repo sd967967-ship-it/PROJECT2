@@ -61,6 +61,7 @@ test("backed-off poller still sweeps the keyless fallback", async () => {
   assert.equal(fallback, 2);
   assert.equal(p.getSnapshot().src, "fallback");
 });
+test("poller never stacks overlapping cycles", async () => {
   let calls = 0;
   const p = new Poller({
     fetchPrimary: async () => { calls++; await new Promise((r) => setTimeout(r, 50)); return [{ hex: "a", lat: 1, lon: 1 }]; },
