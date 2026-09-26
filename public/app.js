@@ -1,9 +1,9 @@
 // SkyTrack 3D frontend. Talks only to same-origin /api + ws (see docs/TECHFLOW.md).
 // Inline DEMO keeps the page presentable when no backend is reachable.
 const DEMO = [
-  { hex: "a1b2c3", callsign: "AIC302", lat: 28.1, lon: 62.5, velKmh: 880, hdg: 290, altM: 11500, origin: "DEL", dest: "LHR", type: "B788", src: "demo", near: { iata: "DEL", city: "Delhi", distKm: 900 } },
-  { hex: "d4e5f6", callsign: "BAW249", lat: 45.5, lon: -20.0, velKmh: 905, hdg: 260, altM: 11800, origin: "LHR", dest: "JFK", type: "B77W", src: "demo", near: { iata: "LHR", city: "London", distKm: 1400 } },
-  { hex: "112233", callsign: "SIA21", lat: 35.0, lon: 135.0, velKmh: 920, hdg: 90, altM: 12100, origin: "SIN", dest: "NRT", type: "A359", src: "demo", near: { iata: "NRT", city: "Tokyo", distKm: 700 } },
+  { hex: "a1b2c3", callsign: "AIC302", lat: 28.1, lon: 62.5, velKmh: 880, hdg: 290, altM: 11500, origin: "DEL", dest: "LHR", type: "B788", cap: 256, fares: { eco: 412, prem: 640, biz: 1180, first: 1890 }, servicesList: ["Wi-Fi", "Meals", "2 bags", "IFE"], src: "demo", near: { iata: "DEL", city: "Delhi", distKm: 900 } },
+  { hex: "d4e5f6", callsign: "BAW249", lat: 45.5, lon: -20.0, velKmh: 905, hdg: 260, altM: 11800, origin: "LHR", dest: "JFK", type: "B77W", cap: 396, fares: { eco: 388, prem: 610, biz: 1240, first: 1980 }, servicesList: ["Wi-Fi", "Meals", "1 bag", "IFE"], src: "demo", near: { iata: "LHR", city: "London", distKm: 1400 } },
+  { hex: "112233", callsign: "SIA21", lat: 35.0, lon: 135.0, velKmh: 920, hdg: 90, altM: 12100, origin: "SIN", dest: "NRT", type: "A359", cap: 253, fares: { eco: 340, prem: 560, biz: 1050, first: 1720 }, servicesList: ["Wi-Fi", "Meals", "2 bags", "IFE"], src: "demo", near: { iata: "NRT", city: "Tokyo", distKm: 700 } },
 ];
 const AIRLINE_NAMES = { AIC: ["Air India", "in"], BAW: ["British Airways", "gb"], SIA: ["Singapore Airlines", "sg"], UAE: ["Emirates", "ae"], DLH: ["Lufthansa", "de"], QFA: ["Qantas", "au"] };
 const flag = (iso) => (iso ? `https://flagcdn.com/w40/${iso}.png` : null);
@@ -126,16 +126,17 @@ async function show(hex) {
   document.getElementById("pRoute").textContent = f.route ? `${f.route.origin.iata} → ${f.route.dest.iata} · ${f.route.distKm.toLocaleString()} km · ${f.route.remainKm.toLocaleString()} km left` : "Position-only track";
   const sv = f.services && !f.services.unknown ? [f.services.wifi && "Wi-Fi", f.services.meals && (f.services.meals === true ? "Meals" : f.services.meals), f.services.baggage, f.services.entertainment].filter(Boolean) : (f.servicesList || ["Wi-Fi", "Meals", "Baggage", "IFE"]);
   document.getElementById("pServices").innerHTML = sv.map((s) => `<li>${s}</li>`).join("");
-  const fares = f.fares || (f.route ? null : null) || demoFares(f);
-  document.getElementById("pFares").innerHTML = fares ? Object.entries(fares).map(([k, v]) => `<tr><td>${k}</td><td>$${(v.avg ?? v).toLocaleString()} avg</td></tr>`).join("") : "<tr><td>route unknown</td><td>–</td></tr>";
+  const fares = normalizeFares(f.fares);
+  document.getElementById("pFares").innerHTML = fares ? Object.entries(fares).map(([k, v]) => `<tr><td>${k}</td><td>$${Number(v.avg ?? v).toLocaleString()} avg</td></tr>`).join("") : "<tr><td>route unknown</td><td>–</td></tr>";
   drawRoute(f.route && f.route.arc);
   const e = state.entities.get(hex);
   if (e) state.viewer.flyTo(e, { duration: 1.2 });
 }
-function demoFares(f) {
-  if (!f.fares) return null;
-  if (typeof f.fares.eco === "number") return { eco: { avg: f.fares.eco }, prem: { avg: f.fares.prem }, biz: { avg: f.fares.biz }, first: { avg: f.fares.first } };
-  return f.fares;
+function normalizeFares(fares) {
+  if (!fares) return null;
+  const out = {};
+  for (const [k, v] of Object.entries(fares)) out[k] = (v && typeof v === "object") ? v : { avg: v };
+  return out;
 }
 function wireSearch() {
   const box = document.getElementById("search"), out = document.getElementById("results");
