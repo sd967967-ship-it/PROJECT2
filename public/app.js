@@ -1,12 +1,4 @@
-// SkyTrack 3D frontend. Talks only to same-origin /api + ws (see docs/TECHFLOW.md).
-// Inline DEMO keeps the page presentable when no backend is reachable.
-const DEMO = [
-  { hex: "a1b2c3", callsign: "AIC302", lat: 28.1, lon: 62.5, velKmh: 880, hdg: 290, altM: 11500, origin: "DEL", dest: "LHR", type: "B788", cap: 256, fares: { eco: 412, prem: 640, biz: 1180, first: 1890 }, servicesList: ["Wi-Fi", "Meals", "2 bags", "IFE"], src: "demo", near: { iata: "DEL", city: "Delhi", distKm: 900 } },
-  { hex: "d4e5f6", callsign: "BAW249", lat: 45.5, lon: -20.0, velKmh: 905, hdg: 260, altM: 11800, origin: "LHR", dest: "JFK", type: "B77W", cap: 396, fares: { eco: 388, prem: 610, biz: 1240, first: 1980 }, servicesList: ["Wi-Fi", "Meals", "1 bag", "IFE"], src: "demo", near: { iata: "LHR", city: "London", distKm: 1400 } },
-  { hex: "112233", callsign: "SIA21", lat: 35.0, lon: 135.0, velKmh: 920, hdg: 90, altM: 12100, origin: "SIN", dest: "NRT", type: "A359", cap: 253, fares: { eco: 340, prem: 560, biz: 1050, first: 1720 }, servicesList: ["Wi-Fi", "Meals", "2 bags", "IFE"], src: "demo", near: { iata: "NRT", city: "Tokyo", distKm: 700 } },
-];
-const AIRLINE_NAMES = { AIC: ["Air India", "in"], BAW: ["British Airways", "gb"], SIA: ["Singapore Airlines", "sg"], UAE: ["Emirates", "ae"], DLH: ["Lufthansa", "de"], QFA: ["Qantas", "au"] };
-const flag = (iso) => (iso ? `https://flagcdn.com/w40/${iso}.png` : null);
+// SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
 const state = { viewer: null, entities: new Map(), routeEnt: null, mode: "demo", all: [], imagery: {} };
 
 function badge(prefix) {
@@ -44,10 +36,8 @@ function initViewer() {
     requestRenderMode: true, maximumRenderTimeChange: Infinity,
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });
-  viewer.scene.globe.enableLighting = false;
   state.imagery = { sat: [esri], hybrid: [esri, labels], street: [osm] };
   state.viewer = viewer;
-  // Opening sweep: one orchestrated motion, then stillness.
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(60, 20, 30000000) });
   if (!reduce) viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(60, 25, 16000000), duration: 3 });
@@ -80,21 +70,8 @@ function upsert(list) {
   }
   for (const [hex, e] of state.entities) if (!seen.has(hex)) { v.entities.remove(e); state.entities.delete(hex); }
   state.all = list;
-  document.getElementById("count").textContent = list.length.toLocaleString();
-  const top = {};
-  for (const f of list) top[f.originCountry || "?"] = (top[f.originCountry || "?"] || 0) + 1;
-  document.getElementById("topList").textContent = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} ${n.toLocaleString()}`).join(" · ");
+  updateTicker(list);
   v.scene.requestRender();
-}
-function setMode(mode, src) {
-  state.mode = mode;
-  document.getElementById("modeBadge").textContent = mode === "live" ? `live · ${src}` : mode;
-  document.getElementById("liveDot").classList.toggle("on", mode === "live");
-}
-async function fetchJSON(url) {
-  const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
 }
 function drawRoute(arc) {
   const v = state.viewer;
@@ -112,33 +89,10 @@ async function show(hex) {
     f = state.all.find((x) => x.hex === hex);
     if (!f) return;
   }
-  const prefix = (f.callsign || "").trim().slice(0, 3).toUpperCase();
-  const [aname, aiso] = AIRLINE_NAMES[prefix] || [null, f.iso || null];
-  document.getElementById("pTitle").textContent = `${f.callsign || f.hex}${f.origin && f.dest ? ` · ${f.origin}→${f.dest}` : ""}`;
-  document.getElementById("pSub").textContent = `${aname || "Unknown operator"} · HEX ${f.hex}${f.type ? ` · ${f.type}` : ""}`;
-  const fl = document.getElementById("pFlag");
-  const fs = flag(aiso);
-  if (fs) { fl.src = fs; fl.alt = aiso; fl.hidden = false; fl.onerror = () => (fl.hidden = true); } else fl.hidden = true;
-  document.getElementById("pSpeed").textContent = `${f.velKmh} km/h`;
-  document.getElementById("pAlt").textContent = f.altM != null ? `${Math.round(f.altM)} m` : "–";
-  document.getElementById("pHdg").textContent = f.hdg != null ? `${Math.round(f.hdg)}°` : "–";
-  document.getElementById("pVs").textContent = f.vsMs != null ? `${f.vsMs > 0 ? "+" : ""}${f.vsMs.toFixed(1)} m/s` : "–";
-  document.getElementById("pNear").textContent = f.near ? `${f.near.iata} · ${f.near.distKm} km` : "–";
-  document.getElementById("pCap").textContent = f.capacity ? `${f.capacity.seats} seats` : (f.cap ? `${f.cap} seats` : "–");
-  document.getElementById("pRoute").textContent = f.route ? `${f.route.origin.iata} → ${f.route.dest.iata} · ${f.route.distKm.toLocaleString()} km · ${f.route.remainKm.toLocaleString()} km left` : (f.origin && f.dest ? `${f.origin} → ${f.dest}` : "Position-only track");
-  const sv = f.services && !f.services.unknown ? [f.services.wifi && "Wi-Fi", f.services.meals && (f.services.meals === true ? "Meals" : f.services.meals), f.services.baggage, f.services.entertainment].filter(Boolean) : (f.servicesList || ["Wi-Fi", "Meals", "Baggage", "IFE"]);
-  document.getElementById("pServices").innerHTML = sv.map((s) => `<li>${s}</li>`).join("");
-  const fares = normalizeFares(f.fares);
-  document.getElementById("pFares").innerHTML = fares ? Object.entries(fares).map(([k, v]) => `<tr><td>${k}</td><td>$${Number(v.avg ?? v).toLocaleString()} avg</td></tr>`).join("") : "<tr><td>route unknown</td><td>–</td></tr>";
+  renderDossier(f);
   drawRoute(f.route && f.route.arc);
   const e = state.entities.get(hex);
   if (e) state.viewer.flyTo(e, { duration: 1.2 });
-}
-function normalizeFares(fares) {
-  if (!fares) return null;
-  const out = {};
-  for (const [k, v] of Object.entries(fares)) out[k] = (v && typeof v === "object") ? v : { avg: v };
-  return out;
 }
 function wireSearch() {
   const box = document.getElementById("search"), out = document.getElementById("results");
@@ -146,9 +100,8 @@ function wireSearch() {
     const q = box.value.trim().toUpperCase();
     const list = (q ? state.all.filter((f) => `${f.callsign || ""} ${f.origin || ""} ${f.dest || ""} ${f.hex}`.toUpperCase().includes(q)) : []).slice(0, 8);
     out.innerHTML = list.map((f) => {
-      const prefix = (f.callsign || "").trim().slice(0, 3).toUpperCase();
-      const [, iso] = AIRLINE_NAMES[prefix] || [];
-      return `<li data-hex="${f.hex}">${iso ? `<img src="${flag(iso)}" alt="" loading="lazy" />` : ""}<span>${f.callsign || f.hex}</span></li>`;
+      const al = airlineFor(f);
+      return `<li data-hex="${f.hex}">${al.iso ? `<img src="${flag(al.iso)}" alt="" loading="lazy" />` : ""}<span>${f.callsign || f.hex}</span></li>`;
     }).join("");
     out.querySelectorAll("li").forEach((li) => li.addEventListener("click", () => show(li.dataset.hex)));
   });
