@@ -10,12 +10,8 @@ html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt
 #globe .cesium-viewer-toolbar, #globe .cesium-viewer-fullscreenContainer,
 #globe .cesium-viewer-vrContainer, #globe .cesium-viewer-geocoderContainer { display: none; }
 #map2d { position: fixed; inset: 0; background: #05080f; }
-#map2d .plane-badge span {
-  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
-  background: #0b2036; border: 2px solid var(--cyan); color: var(--txt);
-  font-family: var(--mono); font-size: 10px; font-weight: 700;
-}
-#map2d .plane-badge { background: none; border: 0; }
+#map2d .plane-icon { background: none; border: 0; }
+#map2d .plane-icon svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,.7)); }
 #nogl { position: fixed; inset: 0; display: grid; place-items: center; background: var(--space); z-index: 50; }
 #nogl[hidden] { display: none; }
 .rail {

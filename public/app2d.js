@@ -20,11 +20,11 @@ function initMap() {
   }));
   return map;
 }
-function planeIcon(callsign) {
-  const prefix = (callsign || "???").trim().slice(0, 3).toUpperCase();
+function planeIcon(f) {
+  const hdg = ((Number(f.hdg) || 0) % 360 + 360) % 360;
   return L.divIcon({
-    className: "plane-badge",
-    html: `<span>${prefix}</span>`,
+    className: "plane-icon",
+    html: `<svg viewBox="-30 -30 60 60" width="34" height="34" style="transform:rotate(${hdg}deg)"><g fill="#eef4ff" stroke="#0b2036" stroke-width="2.5"><path d="M0,-26 L5,-8 L26,4 L26,9 L5,4 L4,18 L12,22 L12,25 L0,22 L-12,25 L-12,22 L-4,18 L-5,4 L-26,9 L-26,4 L-5,-8 Z"/></g></svg>`,
     iconSize: [34, 34], iconAnchor: [17, 17],
   });
 }
@@ -40,7 +40,7 @@ function upsert2d(list) {
   for (const f of list.slice(0, 800)) {
     seen.add(f.hex);
     state2d.tracks.set(f.hex, f);
-    const m = L.marker([f.lat, f.lon], { icon: planeIcon(f.callsign), title: f.callsign || f.hex });
+    const m = L.marker([f.lat, f.lon], { icon: planeIcon(f), title: f.callsign || f.hex });
     m.on("click", () => show2d(f.hex));
     state2d.group.addLayer(m);
   }
