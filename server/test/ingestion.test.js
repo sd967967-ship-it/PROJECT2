@@ -30,6 +30,7 @@ test("sweep survives a failing cell", async () => {
   const rows = await fetchSweep([[1, 1]], { gapMs: 0, fetchFn: async () => { throw new Error("x"); } });
   assert.deepEqual(rows, []);
 });
+test("poller backs off on rate-limit, recovers after", async () => {
   let calls = 0;
   const p = new Poller({
     fetchPrimary: async () => { calls++; throw Object.assign(new Error("rl"), { code: "FEED_RATE_LIMITED" }); },
