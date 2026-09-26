@@ -11,6 +11,12 @@
 - I-FAIL-01 429 → backoff + stale served | I-FAIL-02 slow → timeout → stale + warning | I-FAIL-03 flaky → retry-once then error
 - I-OFF-01 connection refused → offline flag, no throw to caller without context
 
+## Multimodal (`server/test/`, per plan test hooks)
+- S-TLE-01 TLE parse → elements | S-TLE-02 propagation sanity (ISS alt 400–440km, period ≈92.9min) | S-TLE-03 cache TTL (planned `space.test.js`)
+- S-AIS-01 bbox vessels normalize (aiscast fixture) | S-AIS-02 key slot parked until user key (planned)
+- S-RAIL-01 station-sweep merge + delay map (NTES fixture, polite-rate documented) (planned)
+- S-GTFS-01 per-city registry entry = URL + fixture + contract test, zero code change (planned)
+
 ## E2E (`tests/e2e/`, Playwright later)
 - E-APP-01 launch → map tiles + ≥1 marker | E-SEARCH-01 filter by callsign | E-DETAIL-01 click → panel fields | E-EMPTY-01 no-match search state
 - E-ERR-01 backend down → demo badge + retry | E-RESP-01 360×640 layout intact | E-SLOW-01 3G: first paint budget logged
