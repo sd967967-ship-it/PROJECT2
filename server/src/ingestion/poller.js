@@ -20,6 +20,8 @@ class Poller {
   async cycle() {
     if (this.running) return this.cache; // slow fallback must not stack cycles
     this.running = true;
+    const now = Date.now();
+    try {
     try {
       const states = await this.fetchPrimary();
       this.consecFails = 0;
