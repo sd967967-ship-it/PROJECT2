@@ -50,7 +50,15 @@ test("U-STATIC-07 automatic 2D fallback path", () => {
   const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
   assert.match(two, /World_Imagery/);
   assert.match(two, /renderDossier/);
+  assert.match(two, /markerClusterGroup/);
+  assert.match(two, /plane-icon/);
+  assert.match(two, /rotate\(/);
   const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
   assert.match(shared, /renderDossier/);
   assert.match(shared, /updateTicker/);
+});
+test("U-STATIC-08 plane-shaped markers (numbered badges only for clusters)", () => {
+  assert.match(app, /drawPlane/);
+  assert.match(app, /planeBillboard/);
+  assert.match(app, /clusterBadge/);
 });
