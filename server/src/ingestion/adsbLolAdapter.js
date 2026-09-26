@@ -31,4 +31,4 @@ async function fetchPoint(lat, lon, radiusNm = 250) {
   const { body } = await fetchJson(`https://api.adsb.lol/v2/point/${lat}/${lon}/${radiusNm}`);
   return mapAc(body);
 }
-module.exports = { mapAc, fetchPoint, HUBS };
+module.exports = { mapAc, fetchPoint, HUBS, WORLD_GRID, fetchSweep };
