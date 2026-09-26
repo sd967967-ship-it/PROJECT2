@@ -52,7 +52,7 @@ function upsert2d(list) {
       : L.layerGroup().addTo(map);
   }
   state2d.tracks = new Map();
-  for (const f of list.slice(0, 800)) {
+  for (const f of list.slice(0, 1200)) {
     seen.add(f.hex);
     state2d.tracks.set(f.hex, f);
     pushTrail2d(f);

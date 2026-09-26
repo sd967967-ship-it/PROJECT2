@@ -157,7 +157,7 @@ function upsert(list) {
     }
   }
   for (const [id, e] of state.entities) if (!seen.has(id)) { v.entities.remove(e); state.entities.delete(id); }
-  for (const f of list.slice(0, 800)) pushTrail(f);
+  for (const f of list.slice(0, 1200)) pushTrail(f);
   state.all = list;
   updateTicker(list);
   drawSelectedTrail();

@@ -1,5 +1,5 @@
 // Broadcast Module: ws subscribe(bbox) -> throttled diff push. Drops, never queues, on slow clients.
-const MAX_MARKERS = 800;
+const MAX_MARKERS = 1200;
 function inBbox(f, b) {
   if (!b) return true;
   return f.lat >= b.lamin && f.lat <= b.lamax && f.lon >= b.lomin && f.lon <= b.lomax;
