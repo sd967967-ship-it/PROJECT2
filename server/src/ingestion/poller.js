@@ -22,7 +22,6 @@ class Poller {
     this.running = true;
     const now = Date.now();
     try {
-    try {
       const states = await this.fetchPrimary();
       this.consecFails = 0;
       this.store(now, states, "live");
