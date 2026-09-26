@@ -7,12 +7,14 @@ const app = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app.js")
 const html = fs.readFileSync(path.join(__dirname, "..", "..", "public", "index.html"), "utf8");
 
 test("U-STATIC-01 three imagery layers (sat/hybrid/street)", () => {
+  assert.match(app, /google\.com\/vt\/lyrs=s/);
+  assert.match(app, /google\.com\/vt\/lyrs=y/);
   assert.match(app, /World_Imagery/);
-  assert.match(app, /World_Boundaries_and_Places/);
   assert.match(app, /openstreetmap/);
   assert.match(html, /data-lyr="sat"/);
-  assert.match(html, /data-lyr="hybrid"/);
-  assert.match(html, /data-lyr="street"/);
+  assert.match(html, /data-lyr="esri"/);
+  const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
+  assert.match(two, /markerClusterGroup/);
 });
 test("U-STATIC-02 free 3D globe, render-on-demand", () => {
   assert.match(app, /new Cesium\.Viewer/);
