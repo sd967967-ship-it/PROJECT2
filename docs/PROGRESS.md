@@ -35,4 +35,5 @@ _Last updated: 2026-09-27_
 - OpenSky auth creds — optional; anonymous works with lower quota.
 
 ## 🔧 Corrections
+- 2026-09-27 (earlier): Google-tile plan replaced with Esri (since superseded — Google direct tiles now default per user call, ToS noted); Leaflet plan replaced with Cesium 3D per designer brief.
 - 2026-09-27: LLD said 10 airlines — `airlines.json` actually holds 30 (verified by count). ARCHITECTURE test counts updated to 21 server / 38 repo (fresh runs). POLL_MS default corrected 10s→30s; Esri-default references corrected to Google default; TECHFLOW failure/backoff rows corrected to actual behavior.
