@@ -276,6 +276,10 @@ function connectWS() {
     const p = viewer.scene.pick(click.position);
     if (!p || !p.id) return;
     if (p.id.track) { show(p.id.track.hex); return; }
+    if (p.id.airport) {
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(p.id.airport.lon, p.id.airport.lat, 1500000), duration: 1.2 });
+      return;
+    }
     if (p.id.cluster) { // zoom toward the cluster instead of opening a dossier
       const g = p.id.cluster;
       const lat = g.reduce((a, f) => a + f.lat, 0) / g.length;
