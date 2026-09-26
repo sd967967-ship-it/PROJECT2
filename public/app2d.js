@@ -32,7 +32,7 @@ function upsert2d(list) {
   const map = state2d.map, seen = new Set();
   if (!state2d.group) {
     state2d.group = (typeof L.markerClusterGroup === "function")
-      ? L.markerClusterGroup({ maxClusterRadius: 40, disableClusteringAtZoom: 8 }).addTo(map)
+      ? L.markerClusterGroup({ maxClusterRadius: 25, disableClusteringAtZoom: 6 }).addTo(map)
       : L.layerGroup().addTo(map);
   }
   state2d.group.clearLayers();

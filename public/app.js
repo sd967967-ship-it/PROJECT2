@@ -123,7 +123,7 @@ function upsert(list) {
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(f);
   }
-  const CLUSTER_AT = 12; // groups this size or smaller render as individual planes
+  const CLUSTER_AT = 30; // groups this size or smaller render as individual planes
   for (const [k, g] of groups) {
     if (g.length <= CLUSTER_AT) {
       for (const f of g) {
