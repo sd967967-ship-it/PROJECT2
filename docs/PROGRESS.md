@@ -12,6 +12,8 @@ _Last updated: 2026-09-27_
 - Overlay-specifity bug — 2026-09-27 — `#nogl {display:grid}` overrode `[hidden]` so the fallback box covered working maps; fixed with `#nogl[hidden]{display:none}`; verified via headless-Firefox screenshots of both paths.
 - QA 10 cycles — 2026-09-27 — 460/460 automated checks green; 2 High bugs (FEED-01 exhausted primary→thin swinging fallback; MAP-01 Esri tiles never requested→blue globe), 1 Medium (marker bunching), 1 Low + 2 cosmetic; verdict not-ready-for-release; full report `tests/reports/QA-10-CYCLES.md`; no app code changed.
 - Fix round — 2026-09-27 — MAP-01 root cause was removed `imageryProvider` ctor option (0 layers), fixed with `baseLayer: new ImageryLayer()`; FEED-01 fallback now merges all 4 hubs + no-overlap guard; grid clustering (3D) + markercluster (2D); Google satellite default with ToS note; fixes verified by screenshot + cycle 12; see `tests/reports/FIX-REPORT.md`.
+- Feeds verdict — 2026-09-27 — probed airplanes.live (403 needs feeder arrangement), ADSB One (Cloudflare 403), adsb.fi (no compatible endpoint); only adsb.lol works keyless, stays as fallback; verdicts in ARCHITECTURE.md.
+- Plane markers — 2026-09-27 — singles render as heading-rotated plane silhouettes (canvas billboard 3D, SVG 2D); numbered badges kept for clusters only; verified 402-track Europe screenshot.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
