@@ -6,12 +6,12 @@
 <title>SkyTrack — Live 3D Flight Tracking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://unpkg.com/cesium@1/Build/Cesium/Widgets/widgets.css" />
+<link rel="stylesheet" href="https://unpkg.com/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css'" />
 <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
 <div id="globe"></div>
-<div id="nogl" hidden><p>3D needs WebGL. Try a recent Chrome, Edge, or Firefox.</p></div>
+<div id="nogl" hidden><p id="noglMsg">3D could not start.</p><p class="muted">Try a recent Chrome, Edge, or Firefox.</p></div>
 <header class="rail">
   <div class="brand">SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
   <input id="search" type="search" placeholder="Search callsign, airline, airport…" aria-label="Search flights" />
@@ -41,8 +41,41 @@
   <p class="fine" id="pFine">Capacity is aircraft seats plus a typical-load band, an estimate. Fares are distance-modeled until collected history lands.</p>
 </aside>
 <footer class="ticker"><span id="count">0</span> airborne · <span id="topList"></span><span class="src">Data OpenSky + adsb.lol · Imagery Esri + OSM · Flags flagcdn</span></footer>
-<script>window.CESIUM_BASE_URL = "https://unpkg.com/cesium@1/Build/Cesium/";</script>
-<script src="https://unpkg.com/cesium@1/Build/Cesium/Cesium.js"></script>
-<script src="./app.js"></script>
+<script>
+window.__cesiumSources = [
+  "https://unpkg.com/cesium@1.145.0/Build/Cesium/",
+  "https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/"
+];
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("load failed: " + src));
+    document.head.appendChild(s);
+  });
+}
+function fail(msg) {
+  document.getElementById("noglMsg").textContent = msg;
+  document.getElementById("nogl").hidden = false;
+}
+(async function () {
+  let ok = false;
+  for (const base of window.__cesiumSources) {
+    window.CESIUM_BASE_URL = base;
+    try { await loadScript(base + "Cesium.js"); ok = typeof Cesium !== "undefined"; if (ok) break; }
+    catch { /* try next CDN */ }
+  }
+  if (!ok) { fail("Could not download the 3D library from either CDN. Check your internet connection and reload."); return; }
+  try {
+    const c = document.createElement("canvas");
+    if (!(c.getContext("webgl2") || c.getContext("webgl"))) throw new Error("noctx");
+  } catch {
+    fail("Firefox has WebGL disabled or unavailable. In about:config set webgl.disabled to false (and webgl.force-enabled to true if needed), update graphics drivers, then reload.");
+    return;
+  }
+  try { await loadScript("./app.js"); }
+  catch (e) { fail("App failed to load: " + e.message); }
+})();
+</script>
 </body>
 </html>

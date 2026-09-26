@@ -16,7 +16,9 @@ function badge(prefix) {
   const grad = g.createLinearGradient(0, 0, 72, 72);
   grad.addColorStop(0, "#0b2036"); grad.addColorStop(1, `hsl(${h} 70% 38%)`);
   g.fillStyle = grad;
-  g.beginPath(); g.roundRect(2, 2, 68, 68, 16); g.fill();
+  g.beginPath();
+  if (g.roundRect) g.roundRect(2, 2, 68, 68, 16); else g.rect(2, 2, 68, 68);
+  g.fill();
   g.strokeStyle = "#57e6ff"; g.lineWidth = 3; g.stroke();
   g.fillStyle = "#eef4ff"; g.font = "700 24px 'IBM Plex Mono', monospace";
   g.textAlign = "center"; g.textBaseline = "middle";
@@ -170,7 +172,11 @@ function connectWS() {
 (async function boot() {
   let viewer = null;
   try { viewer = initViewer(); }
-  catch { document.getElementById("nogl").hidden = false; return; }
+  catch (e) {
+    document.getElementById("noglMsg").textContent = "3D failed to start: " + (e && e.message ? e.message : e);
+    document.getElementById("nogl").hidden = false;
+    return;
+  }
   wireSearch();
   document.querySelectorAll(".layers button").forEach((b) => b.addEventListener("click", () => setLayer(b.dataset.lyr)));
   document.getElementById("close").addEventListener("click", () => drawRoute(null));
