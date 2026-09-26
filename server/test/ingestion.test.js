@@ -19,6 +19,21 @@ test("adsb.lol maps ac rows with unit conversion", () => {
   assert.equal(out[0].type, "B77W");
   assert.ok(Math.abs(out[0].velMs - 231.5) < 1);
 });
+test("poller backs off on rate-limit, recovers after", async () => {
+  let calls = 0;
+  const p = new Poller({
+    fetchPrimary: async () => { calls++; throw Object.assign(new Error("rl"), { code: "FEED_RATE_LIMITED" }); },
+    maxBackoffMs: 60000,
+  });
+  await p.cycle();
+  assert.equal(calls, 1);
+  await p.cycle(); // backed off: no new fetch
+  assert.equal(calls, 1);
+  p.backoffUntil = Date.now() - 1;
+  p.fetchPrimary = async () => { calls++; return [{ hex: "a", lat: 1, lon: 1 }]; };
+  await p.cycle();
+  assert.equal(p.getSnapshot().src, "live");
+});
 test("poller never stacks overlapping cycles", async () => {
   let calls = 0;
   const p = new Poller({
