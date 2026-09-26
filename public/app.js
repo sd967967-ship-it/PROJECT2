@@ -127,7 +127,7 @@ function upsert(list) {
   let cell = 15;
   try { cell = Math.min(15, Math.max(0.5, v.camera.positionCartographic.height / 111320 / 10)); } catch { /* fixed grid */ }
   const groups = new Map();
-  for (const f of list.slice(0, 800)) {
+  for (const f of list.slice(0, 1200)) {
     const k = cellFor(f, cell);
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(f);
