@@ -15,6 +15,7 @@ html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt
 }
 #map2d .plane-badge { background: none; border: 0; }
 #nogl { position: fixed; inset: 0; display: grid; place-items: center; background: var(--space); z-index: 50; }
+#nogl[hidden] { display: none; }
 .rail {
   position: fixed; top: 14px; left: 14px; width: 300px; z-index: 10;
   background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
