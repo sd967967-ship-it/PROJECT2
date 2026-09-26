@@ -7,6 +7,8 @@
 html, body { margin: 0; height: 100%; background: var(--space); color: var(--txt); font-family: var(--display); overflow: hidden; }
 #globe { position: fixed; inset: 0; }
 #globe canvas { display: block; }
+#globe .cesium-viewer-toolbar, #globe .cesium-viewer-fullscreenContainer,
+#globe .cesium-viewer-vrContainer, #globe .cesium-viewer-geocoderContainer { display: none; }
 #map2d { position: fixed; inset: 0; background: #05080f; }
 #map2d .plane-badge span {
   display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;

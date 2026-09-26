@@ -9,6 +9,7 @@ _Last updated: 2026-09-27_
 - Test system scaffolded — 2026-09-27 — `tests/` (node:test suites, mocks, fixtures, docs, reports, run.js) + `.github/workflows/qa-tests.yml`; app code untouched, suite NOT run yet.
 - Full build v0.1 — 2026-09-27 — `server/` (ingestion/fusion/capacity/pricing/services/broadcast, live-verified 10.7k tracks) + Cesium 3D frontend (Esri satellite, badges, flags) + `server/test/` (10 green); repo suites updated to Cesium contracts (34 green); see LLD.md.
 - WebGL fallback — 2026-09-27 — pinned Cesium 1.145 + dual-CDN loader with diagnostics; automatic Leaflet 2D satellite fallback (`app2d.js`) sharing `shared.js` dossier; machine driver Intel 27.20.100.8935 (2020) likely blocklisted — site now runs regardless.
+- Overlay-specifity bug — 2026-09-27 — `#nogl {display:grid}` overrode `[hidden]` so the fallback box covered working maps; fixed with `#nogl[hidden]{display:none}`; verified via headless-Firefox screenshots of both paths.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
