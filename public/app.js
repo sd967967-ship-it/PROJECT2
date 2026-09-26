@@ -33,7 +33,7 @@ function initViewer() {
     imageryProvider: esri,
     baseLayerPicker: false, geocoder: false, homeButton: true,
     timeline: false, animation: false, fullscreenButton: false,
-    requestRenderMode: true, maximumRenderTimeChange: Infinity,
+    requestRenderMode: true,
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });
   state.imagery = { sat: [esri], hybrid: [esri, labels], street: [osm] };
