@@ -60,5 +60,10 @@ test("U-STATIC-07 automatic 2D fallback path", () => {
 test("U-STATIC-08 plane-shaped markers (numbered badges only for clusters)", () => {
   assert.match(app, /drawPlane/);
   assert.match(app, /planeBillboard/);
-  assert.match(app, /clusterBadge/);
+  assert.match(app, /#ffd23f/);
+  assert.match(app, /CLUSTER_AT/);
+  assert.match(app, /clusterBadge/); // clusters keep counts; singles are yellow planes
+  const planes2d = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
+  assert.match(planes2d, /#ffd23f/);
+  assert.match(planes2d, /disableClusteringAtZoom/);
 });
