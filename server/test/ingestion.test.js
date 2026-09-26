@@ -28,6 +28,7 @@ test("poller never stacks overlapping cycles", async () => {
   assert.equal(calls, 1);
   assert.equal(p.getSnapshot().src, "live");
 });
+test("poller caches, falls back, serves stale", async () => {
   let n = 0;
   const p = new Poller({
     fetchPrimary: async () => { n++; if (n < 3) throw Object.assign(new Error("x"), { code: "FEED_OFFLINE" }); return [{ hex: "a", lat: 1, lon: 1 }]; },
