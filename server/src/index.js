@@ -74,6 +74,13 @@ function build() {
   const app = express();
   app.disable("x-powered-by");
   app.get("/api/health", (req, res) => res.json({ ok: true, src: poller.getSnapshot().src, t: poller.getSnapshot().t }));
+  app.get("/api/airports", (req, res) => {
+    // Static hubs + live nearby counts derived from the current snapshot (no extra feed cost).
+    const s = tracks();
+    const counts = {};
+    for (const t of s.tracks) if (t.near) counts[t.near.iata] = (counts[t.near.iata] || 0) + 1;
+    res.json({ t: s.t, src: s.src, airports: AIRPORTS.map((a) => ({ ...a, nearby: counts[a.iata] || 0 })) });
+  });
   app.get("/api/snapshot", (req, res) => {
     const s = tracks();
     res.json({ t: s.t, src: s.src, count: s.tracks.length, tracks: s.tracks });

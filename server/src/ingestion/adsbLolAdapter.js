@@ -25,7 +25,8 @@ function mapAc(body) {
   return out;
 }
 // Hub rotation points keep fallback inside free fair-use when primary fails.
-const HUBS = [[28.57, 77.1], [51.47, -0.45], [40.64, -73.78], [1.36, 103.99]];
+// Eight hubs approximate worldwide coverage (APAC, Europe, N/S America, ME, Oceania, Africa edge).
+const HUBS = [[28.57, 77.1], [51.47, -0.45], [40.64, -73.78], [1.36, 103.99], [25.25, 55.36], [-33.95, 151.18], [-23.44, -46.47], [33.94, -118.41]];
 async function fetchPoint(lat, lon, radiusNm = 250) {
   const { body } = await fetchJson(`https://api.adsb.lol/v2/point/${lat}/${lon}/${radiusNm}`);
   return mapAc(body);
