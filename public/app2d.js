@@ -29,6 +29,21 @@ function planeIcon(f) {
     iconSize: [30, 30], iconAnchor: [15, 15],
   });
 }
+function pushTrail2d(f) {
+  let t = state2d.trails.get(f.hex);
+  if (!t) { t = []; state2d.trails.set(f.hex, t); }
+  const last = t[t.length - 1];
+  if (!last || Math.abs(last[0] - f.lat) > 1e-4 || Math.abs(last[1] - f.lon) > 1e-4) t.push([f.lat, f.lon]);
+  if (t.length > 12) t.shift();
+  if (state2d.trails.size > 1200) state2d.trails.delete(state2d.trails.keys().next().value);
+}
+function drawSelectedTrail2d() {
+  const map = state2d.map;
+  if (state2d.trailLine) { map.removeLayer(state2d.trailLine); state2d.trailLine = null; }
+  const t = state2d.selectedHex && state2d.trails.get(state2d.selectedHex);
+  if (!t || t.length < 2) return;
+  state2d.trailLine = L.polyline(t, { color: "#ffb454", weight: 2 }).addTo(map);
+}
 function upsert2d(list) {
   const map = state2d.map, seen = new Set();
   if (!state2d.group) {
@@ -36,17 +51,32 @@ function upsert2d(list) {
       ? L.markerClusterGroup({ maxClusterRadius: 25, disableClusteringAtZoom: 6 }).addTo(map)
       : L.layerGroup().addTo(map);
   }
-  state2d.group.clearLayers();
   state2d.tracks = new Map();
   for (const f of list.slice(0, 800)) {
     seen.add(f.hex);
     state2d.tracks.set(f.hex, f);
-    const m = L.marker([f.lat, f.lon], { icon: planeIcon(f), title: f.callsign || f.hex });
-    m.on("click", () => show2d(f.hex));
-    state2d.group.addLayer(m);
+    pushTrail2d(f);
+    let m = state2d.markers.get(f.hex);
+    if (!m) {
+      m = L.marker([f.lat, f.lon], { icon: planeIcon(f), title: f.callsign || f.hex });
+      m.on("click", () => show2d(f.hex));
+      state2d.markers.set(f.hex, m);
+      state2d.group.addLayer(m);
+    } else {
+      m.setLatLng([f.lat, f.lon]);
+      m.setIcon(planeIcon(f));
+    }
+  }
+  for (const [hex, m] of state2d.markers) {
+    if (!seen.has(hex)) { state2d.group.removeLayer(m); state2d.markers.delete(hex); state2d.trails.delete(hex); }
   }
   state2d.all = list;
   updateTicker(list);
+  drawSelectedTrail2d();
+  if (state2d.followHex && state2d.tracks.has(state2d.followHex)) {
+    const t = state2d.tracks.get(state2d.followHex);
+    map.panTo([t.lat, t.lon], { animate: true });
+  }
 }
 function drawRoute2d(arc) {
   if (state2d.routeLine) { state2d.map.removeLayer(state2d.routeLine); state2d.routeLine = null; }
