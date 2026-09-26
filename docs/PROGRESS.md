@@ -15,6 +15,7 @@ _Last updated: 2026-09-27_
 - Feeds verdict — 2026-09-27 — probed airplanes.live (403 needs feeder arrangement), ADSB One (Cloudflare 403), adsb.fi (no compatible endpoint); only adsb.lol works keyless, stays as fallback; verdicts in ARCHITECTURE.md.
 - Plane markers — 2026-09-27 — singles render as heading-rotated plane silhouettes (canvas billboard 3D, SVG 2D); numbered badges kept for clusters only; verified 402-track Europe screenshot.
 - Yellow small planes — 2026-09-27 — `#ffd23f` silhouettes, 30px footprint; clustering relaxed (3D groups ≤30 stay planes, 2D radius 25 + decluster at zoom 6); verified 13 yellow planes over India, 0 numbered badges at that zoom.
+- Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
