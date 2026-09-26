@@ -48,6 +48,7 @@ function initViewer() {
   });
   state.imagery = { sat: [googleSat], hybrid: [googleHyb], street: [osm], esri: [esri, labels] };
   state.viewer = viewer;
+  window.__viewer = viewer; // debug/test seam: lets automation inspect globe state
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   viewer.camera.setView({ destination: Cesium.Cartesian3.fromDegrees(60, 20, 30000000) });
   if (!reduce) viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(60, 25, 16000000), duration: 3 });
