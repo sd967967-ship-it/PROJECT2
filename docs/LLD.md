@@ -53,7 +53,23 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 ## Services Module
 | Function | Signature | Notes |
 |----------|-----------|-------|
-| getServices | `getServices(airlineCode) -> {wifi, meals, baggage, entertainment}` | `server/data/airline-services.json` (10 airlines); unknown → `{unknown:true}` |
+| getServices | `getServices(airlineCode) -> {wifi, meals, baggage, entertainment}` | `server/data/airlines.json` (30 airlines, verified 2026-09-27); unknown → `{unknown:true}` |
+
+## TrackingSource Module (planned, per multimodal plan)
+| Function | Signature | Notes |
+|----------|-----------|-------|
+| getSnapshot | `getSnapshot(domain, bbox?) -> movers[]` | `movers[] = {id, lat, lon, altM, velKmh, hdg, label, meta}`; one seam for sky/sea/streets/space |
+
+## Domain Adapters (planned; registry grows by config, not code)
+| Adapter | Source | Key? | Status |
+|---------|--------|------|--------|
+| `adsb` | OpenSky + adsb.lol sweep | no (auth raises quota) | exists |
+| `tle` | CelesTrak + `satellite.js` (MIT) | no | planned Phase 1 |
+| `ais` | aiscast bbox/stream (verified keyless 2026-09-27); aisstream slot | keyless now, key slot later | planned |
+| `rail` | NTES unofficial clients, station-sweep poller | no (unofficial: polite + cache) | planned |
+| `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | planned |
+| `gtfs-static` | open GTFS stops worldwide | no | planned |
+| `solar` | Kepler math, zero network | no | planned Phase 1 |
 
 ## Broadcast Module
 | Function | Signature | Notes |
@@ -70,4 +86,4 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | `styles.css` | Space Grotesk + IBM Plex Mono; tokens `--space/--cyan/--amber` |
 
 ## Known limitations
-No guarantee of every flight (oceans/Mode-S gaps); fares modeled until collector has 2–4 weeks data; routes nullable until schedule source added.
+No guarantee of every flight (oceans/Mode-S gaps); fares modeled until collector has 2–4 weeks data; routes nullable until schedule source added. Sea/streets coverage follows volunteer/open feeds per region; rail positions are station-anchored (NTES), not GPS. Plan-file note: `multimodal-space-plan.md` graded ships/rail as key-gated before the 2026-09-27 keyless verification — the table above supersedes it.
