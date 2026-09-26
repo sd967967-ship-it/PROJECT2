@@ -24,15 +24,15 @@ function planeIcon(f) {
   const hdg = ((Number(f.hdg) || 0) % 360 + 360) % 360;
   return L.divIcon({
     className: "plane-icon",
-    html: `<svg viewBox="-30 -30 60 60" width="34" height="34" style="transform:rotate(${hdg}deg)"><g fill="#eef4ff" stroke="#0b2036" stroke-width="2.5"><path d="M0,-26 L5,-8 L26,4 L26,9 L5,4 L4,18 L12,22 L12,25 L0,22 L-12,25 L-12,22 L-4,18 L-5,4 L-26,9 L-26,4 L-5,-8 Z"/></g></svg>`,
-    iconSize: [34, 34], iconAnchor: [17, 17],
+    html: `<svg viewBox="-30 -30 60 60" width="30" height="30" style="transform:rotate(${hdg}deg)"><g fill="#ffd23f" stroke="#0b2036" stroke-width="2.5"><path d="M0,-26 L5,-8 L26,4 L26,9 L5,4 L4,18 L12,22 L12,25 L0,22 L-12,25 L-12,22 L-4,18 L-5,4 L-26,9 L-26,4 L-5,-8 Z"/></g></svg>`,
+    iconSize: [30, 30], iconAnchor: [15, 15],
   });
 }
 function upsert2d(list) {
   const map = state2d.map, seen = new Set();
   if (!state2d.group) {
     state2d.group = (typeof L.markerClusterGroup === "function")
-      ? L.markerClusterGroup({ maxClusterRadius: 60 }).addTo(map)
+      ? L.markerClusterGroup({ maxClusterRadius: 40, disableClusteringAtZoom: 8 }).addTo(map)
       : L.layerGroup().addTo(map);
   }
   state2d.group.clearLayers();

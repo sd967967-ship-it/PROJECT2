@@ -25,7 +25,7 @@ function drawPlane(g, hdgDeg) {
   g.lineTo(-26, 4);
   g.lineTo(-5, -8);
   g.closePath();
-  g.fillStyle = "#eef4ff";
+  g.fillStyle = "#ffd23f";
   g.strokeStyle = "#0b2036"; g.lineWidth = 3;
   g.fill(); g.stroke();
   g.restore();
@@ -98,7 +98,7 @@ function ensureSingle(v, f, pos) {
   if (!e) {
     e = v.entities.add({
       id: f.hex, position: pos,
-      billboard: { image: planeBillboard(f.hdg), width: 38, height: 38, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.4, 2e7, 0.5), alignedAxis: Cesium.Cartesian3.ZERO },
+      billboard: { image: planeBillboard(f.hdg), width: 30, height: 30, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.3, 2e7, 0.45), alignedAxis: Cesium.Cartesian3.ZERO },
       label: { text: f.callsign || f.hex, font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -32), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
     });
     state.entities.set(f.hex, e);
@@ -115,19 +115,21 @@ function ensureSingle(v, f, pos) {
 }
 function upsert(list) {
   const v = state.viewer, seen = new Set();
-  let cell = 20;
-  try { cell = Math.min(20, Math.max(0.75, v.camera.positionCartographic.height / 111320 / 6)); } catch { /* fixed grid */ }
+  let cell = 15;
+  try { cell = Math.min(15, Math.max(0.5, v.camera.positionCartographic.height / 111320 / 10)); } catch { /* fixed grid */ }
   const groups = new Map();
   for (const f of list.slice(0, 800)) {
     const k = cellFor(f, cell);
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(f);
   }
+  const CLUSTER_AT = 12; // groups this size or smaller render as individual planes
   for (const [k, g] of groups) {
-    if (g.length === 1) {
-      const f = g[0];
-      ensureSingle(v, f, Cesium.Cartesian3.fromDegrees(f.lon, f.lat, Math.max(f.altM || 10000, 3000)));
-      seen.add(f.hex);
+    if (g.length <= CLUSTER_AT) {
+      for (const f of g) {
+        ensureSingle(v, f, Cesium.Cartesian3.fromDegrees(f.lon, f.lat, Math.max(f.altM || 10000, 3000)));
+        seen.add(f.hex);
+      }
     } else {
       const id = `c:${k}`;
       const lat = g.reduce((a, f) => a + f.lat, 0) / g.length;
