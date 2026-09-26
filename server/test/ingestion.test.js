@@ -45,7 +45,22 @@ test("poller backs off on rate-limit, recovers after", async () => {
   await p.cycle();
   assert.equal(p.getSnapshot().src, "live");
 });
-test("poller never stacks overlapping cycles", async () => {
+test("backed-off poller still sweeps the keyless fallback", async () => {
+  let primary = 0, fallback = 0;
+  const p = new Poller({
+    fetchPrimary: async () => { primary++; throw Object.assign(new Error("rl"), { code: "FEED_RATE_LIMITED" }); },
+    fetchFallback: async () => { fallback++; return [{ hex: "a", lat: 1, lon: 1 }]; },
+    maxBackoffMs: 60000,
+  });
+  await p.cycle(); // fail#1: no fallback yet
+  assert.equal(fallback, 0);
+  await p.cycle(); // fail#2 -> fallback + backoff armed
+  assert.equal(fallback, 1);
+  await p.cycle(); // backed off: primary untouched, fallback still sweeps
+  assert.equal(primary, 2);
+  assert.equal(fallback, 2);
+  assert.equal(p.getSnapshot().src, "fallback");
+});
   let calls = 0;
   const p = new Poller({
     fetchPrimary: async () => { calls++; await new Promise((r) => setTimeout(r, 50)); return [{ hex: "a", lat: 1, lon: 1 }]; },
