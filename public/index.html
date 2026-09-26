@@ -92,6 +92,20 @@ function webglOK() {
     catch { /* try next CDN */ }
   }
   if (!ok2d) { fail("Could not download map libraries from any CDN. Check your internet connection and reload."); return; }
+  for (const css of [
+    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css",
+    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css",
+  ]) {
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = css; document.head.appendChild(l);
+  }
+  let mc = false;
+  for (const src of [
+    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js",
+    "https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js",
+  ]) {
+    try { await loadScript(src); mc = typeof L.markerClusterGroup === "function"; if (mc) break; }
+    catch { /* try next CDN */ }
+  }
   document.getElementById("modeBadge").textContent = "2D fallback";
   await loadScript("./app2d.js");
 })();

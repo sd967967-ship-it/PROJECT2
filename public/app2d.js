@@ -28,17 +28,20 @@ function planeIcon(callsign) {
 }
 function upsert2d(list) {
   const map = state2d.map, seen = new Set();
+  if (!state2d.group) {
+    state2d.group = (typeof L.markerClusterGroup === "function")
+      ? L.markerClusterGroup({ maxClusterRadius: 60 }).addTo(map)
+      : L.layerGroup().addTo(map);
+  }
+  state2d.group.clearLayers();
+  state2d.tracks = new Map();
   for (const f of list.slice(0, 800)) {
     seen.add(f.hex);
-    let m = state2d.markers.get(f.hex);
-    if (!m) {
-      m = L.marker([f.lat, f.lon], { icon: planeIcon(f.callsign), title: f.callsign || f.hex }).addTo(map);
-      m.on("click", () => show2d(f.hex));
-      m.track = f;
-      state2d.markers.set(f.hex, m);
-    } else { m.setLatLng([f.lat, f.lon]); m.track = f; }
+    state2d.tracks.set(f.hex, f);
+    const m = L.marker([f.lat, f.lon], { icon: planeIcon(f.callsign), title: f.callsign || f.hex });
+    m.on("click", () => show2d(f.hex));
+    state2d.group.addLayer(m);
   }
-  for (const [hex, m] of state2d.markers) if (!seen.has(hex)) { map.removeLayer(m); state2d.markers.delete(hex); }
   state2d.all = list;
   updateTicker(list);
 }
