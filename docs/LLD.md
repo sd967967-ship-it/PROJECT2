@@ -58,7 +58,7 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 ## Broadcast Module
 | Function | Signature | Notes |
 |----------|-----------|-------|
-| subscribe | `ws {op:"sub", bbox, filters?} → {op:"diff", t, upsert:[], remove:[]}` throttled 5s | Server culls to bbox, caps 800 markers; backpressure: drop tick when `bufferedAmount` >1MB |
+| subscribe | `ws {op:"sub", bbox, filters?} → {op:"diff", t, upsert:[], remove:[]}` throttled 5s | Server culls to bbox, caps 1200 markers; backpressure: drop tick when `bufferedAmount` >1MB |
 
 ## Frontend Module (`public/`)
 | Piece | Notes |

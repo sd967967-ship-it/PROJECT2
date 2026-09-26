@@ -18,7 +18,7 @@ Live map + detail panel served from one free backend + one free frontend host. D
 |----|---------|--------------|------------|--------|
 | P1 | viewer | see live aircraft on a world map with search by callsign/route/airport | I can find flights fast | done 2026-09-27 |
 | P2 | viewer | click a plane → speed, ETA, flying hours, path, capacity, services, fare avgs | I get full context in one panel | done (ETA/fares only when route known; else position-only) |
-| P3 | viewer | filter to my viewport with smooth 500+ markers | map stays fast globally | done (800 cap + requestRenderMode) |
+| P3 | viewer | filter to my viewport with smooth markers | map stays fast globally | done (1200 cap + clustering + requestRenderMode) |
 | P4 | viewer | see airport departures/arrivals derived from live tracks | I can browse hubs | partial (nearest-hub per track; board pending) |
 | P5 | builder | run everything on free tiers with no API keys | cost stays zero | done |
 
