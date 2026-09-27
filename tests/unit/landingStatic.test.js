@@ -54,12 +54,13 @@ test("U-STATIC-07 3D globe only, no 2D fallback", () => {
   assert.match(shared, /renderDossier/);
   assert.match(shared, /updateTicker/);
 });
-test("U-STATIC-08 small yellow plane markers (numbers only for dense clusters)", () => {
+test("U-STATIC-08 small yellow plane symbols, no numbered badges", () => {
   assert.match(app, /drawPlane/);
   assert.match(app, /planeBillboard/);
   assert.match(app, /#ffd23f/);
-  assert.match(app, /CLUSTER_AT/);
-  assert.match(app, /clusterBadge/); // clusters keep counts; singles are yellow planes
+  assert.match(app, /no numbered badges by design/);
+  assert.doesNotMatch(app, /clusterBadge/);
+  assert.doesNotMatch(app, /CLUSTER_AT/);
 });
 test("U-STATIC-10 four tracking modes over backend only", () => {
   const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
@@ -78,6 +79,26 @@ test("U-STATIC-10 four tracking modes over backend only", () => {
     assert.doesNotMatch(src, /celestrak\.org/i);
     assert.doesNotMatch(src, /aiscast\.|aisstream\./i);
     assert.doesNotMatch(src, /gtfs-realtime|gtfsrt/i);
+  }
+});
+test("U-STATIC-11 layer panel, overlays, solar controls, no provider hosts", () => {
+  const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
+  for (const id of ["layerPanel", "layerRows", "layerCount", "wxGo", "wxUnits", "wxOut", "kpOut", "solarBlock", "simPlay", "simSpeed", "simDate", "simReset", "simBadge", "solarRows", "srStatus", "systemBlock", "systemRow"]) {
+    assert.ok(html.includes(`id="${id}"`), `missing ${id}`);
+  }
+  for (const fn of ["refreshLayers", "setLayerOverlay", "refreshOverlay", "terminatorPoints", "wxAtCenter", "simTick", "buildSolarTable", "showOverlay", "announce", "state.systems"]) {
+    assert.ok(app.includes(fn), `missing ${fn}`);
+  }
+  assert.ok(html.includes("data-system"), "missing transit system filter");
+  assert.match(shared, /function esc/);
+  assert.match(shared, /PLANET_INFO/);
+  assert.match(html, /not to scale/);
+  for (const src of [app, shared, html]) {
+    assert.doesNotMatch(src, /earthquake\.usgs\.gov/i);
+    assert.doesNotMatch(src, /eonet\.gsfc\.nasa\.gov/i);
+    assert.doesNotMatch(src, /open-meteo\.com/i);
+    assert.doesNotMatch(src, /swpc\.noaa\.gov/i);
+    assert.doesNotMatch(src, /ssd-api\.jpl\.nasa\.gov\/fireball/i);
   }
 });
 test("U-STATIC-09 brand logo + navy/silver gradient theme", () => {

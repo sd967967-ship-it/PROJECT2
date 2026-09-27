@@ -25,12 +25,21 @@
     <button data-domain="sky" class="on" aria-pressed="true">Sky</button><button data-domain="sea" aria-pressed="false">Sea</button><button data-domain="streets" aria-pressed="false">Streets</button><button data-domain="space" aria-pressed="false">Space</button>
   </div>
   <div class="layers" role="group" aria-label="Imagery">
-    <button data-lyr="sat" class="on">Satellite</button><button data-lyr="hybrid">Hybrid</button><button data-lyr="street">Streets</button><button data-lyr="esri">Esri</button>
+    <button data-lyr="sat" class="on" aria-pressed="true">Satellite</button><button data-lyr="hybrid" aria-pressed="false">Hybrid</button><button data-lyr="street" aria-pressed="false">Streets</button><button data-lyr="esri" aria-pressed="false">Esri</button>
   </div>
-  <ul id="results" aria-live="polite"></ul>
+  <ul id="results" role="listbox" aria-label="Search results" aria-live="polite"></ul>
   <details class="panel" id="layerPanel">
     <summary>Layers &amp; data <span id="layerCount" class="badge"></span></summary>
     <div id="layerRows" role="group" aria-label="Data layers"></div>
+    <div class="wxblock" id="systemBlock" hidden>
+      <h3>Transit systems</h3>
+      <div class="row" id="systemRow" role="group" aria-label="Transit systems">
+        <label><input type="checkbox" data-system="rail" checked /> Rail</label>
+        <label><input type="checkbox" data-system="metro" checked /> Metro</label>
+        <label><input type="checkbox" data-system="tram" checked /> Tram</label>
+        <label><input type="checkbox" data-system="bus" checked /> Bus</label>
+      </div>
+    </div>
     <div class="wxblock">
       <h3>Weather at view center</h3>
       <div class="row"><button id="wxGo">Get conditions</button>
@@ -53,11 +62,11 @@
   </details>
   <p id="srStatus" class="sr-only" aria-live="polite"></p>
 </header>
-<aside class="dossier" id="panel" aria-live="polite">
+<aside class="dossier" id="panel" aria-labelledby="pTitle">
   <button id="close" aria-label="Close flight details">×</button>
   <div class="flight-head">
     <img id="pFlag" alt="" hidden />
-    <div><h2 id="pTitle">Pick a flight</h2><p class="muted" id="pSub">Click any badge on the globe.</p></div>
+    <div><h2 id="pTitle" tabindex="-1">Pick a flight</h2><p class="muted" id="pSub">Search above or click any badge on the globe.</p></div>
   </div>
   <div class="grid">
     <div><label>Speed</label><b id="pSpeed">–</b></div>
@@ -68,7 +77,7 @@
     <div><label>Capacity</label><b id="pCap">–</b></div>
   </div>
   <h3>Route</h3><div id="pRoute" class="muted">Position-only track</div>
-  <button id="follow">Follow this flight</button>
+  <button id="follow" aria-pressed="false">Follow this flight</button>
   <h3>Services</h3><ul id="pServices" class="chips"></ul>
   <h3>Fares <span class="muted-sm">modeled avg</span></h3>
   <table class="fares"><tbody id="pFares"></tbody></table>

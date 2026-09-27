@@ -59,6 +59,12 @@ test("GET /api/domains + per-domain snapshots serve demo at boot", async () => {
     assert.ok(Array.isArray(sky.tracks));
     const bad = await fetch(`${base}/api/ocean/snapshot`);
     assert.equal(bad.status, 404);
+    const bboxBad = await fetch(`${base}/api/space/snapshot?lamin=999`);
+    assert.equal(bboxBad.status, 400);
+    const full = await (await fetch(`${base}/api/space/snapshot`)).json();
+    const boxed = await (await fetch(`${base}/api/space/snapshot?lamin=40&lomin=-10&lamax=60&lomax=10`)).json();
+    assert.ok(boxed.count <= full.count);
+    assert.ok(boxed.movers.every((m) => m.lat >= 40 && m.lat <= 60 && m.lon >= -10 && m.lon <= 10));
   } finally { srv.close(); }
 });
 test("detail + stops + solar endpoints answer", async () => {

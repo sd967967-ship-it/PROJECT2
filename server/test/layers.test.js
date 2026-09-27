@@ -3,6 +3,13 @@ const assert = require("node:assert/strict");
 const { buildLayers, snapshotState } = require("../src/status");
 const { build } = require("../src/index");
 
+test("feed pollers honor the states[] contract (singletons wrapped)", async () => {
+  const { feeds } = require("../src/index");
+  for (const [name, p] of Object.entries(feeds)) {
+    const rows = await p.fetchPrimary().catch(() => null);
+    if (rows) assert.ok(Array.isArray(rows), `${name} must yield states[]`);
+  }
+});
 test("status maps snapshots to layer states honestly", () => {
   assert.equal(snapshotState("live", [{ src: "x" }], Date.now(), 60000).state, "live");
   assert.equal(snapshotState("fallback", [{ src: "demo" }], Date.now(), 60000).state, "unavailable");
@@ -41,6 +48,7 @@ test("hazard + weather + space-weather endpoints validate input", async () => {
   try {
     const base = `http://127.0.0.1:${srv.address().port}`;
     assert.equal((await fetch(`${base}/api/hazards/quakes?minMag=99`)).status, 400);
+    assert.equal((await fetch(`${base}/api/hazards/quakes?minMag=0`)).status, 400); // cache floor is M4.5
     const q = await (await fetch(`${base}/api/hazards/quakes`)).json();
     assert.ok(Array.isArray(q.quakes));
     assert.equal((await fetch(`${base}/api/weather?lat=999&lon=0`)).status, 400);
@@ -51,5 +59,13 @@ test("hazard + weather + space-weather endpoints validate input", async () => {
     assert.ok(ports.count >= 60);
     const sw = await (await fetch(`${base}/api/space/weather`)).json();
     assert.ok("kp" in sw && Array.isArray(sw.fireballs));
+    const emptyBoard = await (await fetch(`${base}/api/streets/board?lat=0&lon=0`)).json();
+    assert.equal(emptyBoard.stop, null);
+    assert.ok(/Norway/.test(emptyBoard.note));
+    assert.equal(emptyBoard.src, "entur");
+    assert.equal((await fetch(`${base}/api/streets/board?lat=999&lon=0`)).status, 400);
+    const solar = await (await fetch(`${base}/api/space/solar?date=2026-01-01`)).json();
+    assert.ok(solar.count >= 15 && solar.date.startsWith("2026-01-01"));
+    assert.ok(Array.isArray(solar.earthHelio) && solar.earthHelio.length === 3);
   } finally { srv.close(); }
 });

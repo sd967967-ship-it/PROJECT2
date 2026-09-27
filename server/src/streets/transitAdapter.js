@@ -17,6 +17,7 @@ function normalizeVehicles(rows) {
     out.push({
       id,
       route: str(r.route ?? r.line ?? r.trip),
+      system: str(r.system) || null,
       lat, lon,
       kmh: num(r.kmh ?? r.speed ?? r.velocity) ?? 0,
       hdg: num(r.hdg ?? r.heading ?? r.bearing),
@@ -35,7 +36,7 @@ function toMovers(vehicles, src) {
     velKmh: Math.round(v.kmh || 0),
     hdg: v.hdg,
     label: v.route ? `${v.route} · ${v.id}` : v.id,
-    meta: { route: v.route, status: v.status, next: v.next },
+    meta: { route: v.route, system: v.system, status: v.status, next: v.next },
     src: src || v.src || "transit",
   }));
 }

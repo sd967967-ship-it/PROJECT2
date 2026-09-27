@@ -16,6 +16,9 @@ const { RouteCache } = require("./routes");
 const { fetchJson } = require("./ingestion/fetchJson");
 const sea = require("./sea/aisAdapter");
 const streets = require("./streets/transitAdapter");
+const entur = require("./streets/entur");
+const finrail = require("./streets/finrail");
+const irishrail = require("./streets/irishrail");
 const tle = require("./space/tle");
 const solar = require("./space/solar");
 const craft = require("./space/craft");
@@ -109,6 +112,15 @@ const streetsPoller = new Poller({
   fetchFallback: async () => streets.demoVehicles(),
   intervalMs: Number(process.env.STREET_POLL_MS || 30000),
 });
+// Live rail pollers (keyless open feeds, no fallback — empty reads unavailable).
+const fiPoller = new Poller({
+  fetchPrimary: () => finrail.fetchLive({ fetchJson }),
+  intervalMs: 30000,
+});
+const iePoller = new Poller({
+  fetchPrimary: () => irishrail.fetchLive(),
+  intervalMs: 60000,
+});
 const tleStore = tle.createTleStore();
 // Hazard + space-weather pollers (keyless public feeds; empty cache reads as
 // unavailable in /api/layers, never as live).
@@ -121,7 +133,8 @@ const eventPoller = new Poller({
   intervalMs: 1800000,
 });
 const swpcPoller = new Poller({
-  fetchPrimary: () => spacewx.fetchKp({ fetchJson }),
+  // Kp is a singleton: wrap in an array — Poller stores states[].
+  fetchPrimary: async () => [await spacewx.fetchKp({ fetchJson })],
   intervalMs: 900000,
 });
 const firePoller = new Poller({
@@ -147,8 +160,21 @@ function seaSnapshot() {
 function streetsSnapshot() {
   const s = streetsPoller.getSnapshot();
   const states = (s.states && s.states.length) ? s.states : streets.demoVehicles();
-  const src = (s.states && s.states.length) ? deriveSrc(s.src, s.states) : "demo";
-  return { t: s.t || Date.now(), src, movers: streets.toMovers(states, src) };
+  const baseSrc = (s.states && s.states.length) ? deriveSrc(s.src, s.states) : "demo";
+  const rail = railMovers();
+  const movers = [...rail, ...streets.toMovers(states, baseSrc)];
+  // Mixed honesty: live rail rows never launder the sample base rows.
+  const baseDemo = states.every((x) => x && x.src === "demo");
+  const src = rail.length ? (baseDemo ? "mixed" : "live") : baseSrc;
+  return { t: s.t || Date.now(), src, movers };
+}
+function railMovers() {
+  const out = [];
+  const fi = fiPoller.getSnapshot();
+  if (fi.states && fi.states.length) out.push(...finrail.toMovers(fi.states, "live"));
+  const ie = iePoller.getSnapshot();
+  if (ie.states && ie.states.length) out.push(...irishrail.toMovers(ie.states, "live"));
+  return out;
 }
 function spaceSnapshot() {
   const now = new Date();
@@ -193,7 +219,7 @@ function build() {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://*.google.com https://server.arcgisonline.com https://tile.openstreetmap.org; worker-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
     next();
   });
   app.get("/api/health", (req, res) => res.json({ ok: true, src: poller.getSnapshot().src, t: poller.getSnapshot().t }));
@@ -243,11 +269,20 @@ function build() {
     let d;
     try { d = assertDomain(req.params.domain); }
     catch { return res.status(404).json({ error: "unknown domain" }); }
+    let bbox = null;
+    if (req.query.lamin != null || req.query.lomin != null || req.query.lamax != null || req.query.lomax != null) {
+      const b = { lamin: Number(req.query.lamin), lomin: Number(req.query.lomin), lamax: Number(req.query.lamax), lomax: Number(req.query.lomax) };
+      if (![b.lamin, b.lomin, b.lamax, b.lomax].every(Number.isFinite) || b.lamin < -90 || b.lamax > 90 || b.lomin < -180 || b.lomax > 180 || b.lamin > b.lamax || b.lomin > b.lomax) {
+        return res.status(400).json({ error: "bbox lamin/lomin/lamax/lomax invalid" });
+      }
+      bbox = b;
+    }
     if (d === "sky") {
       const s = tracks();
-      return res.json({ t: s.t, src: s.src, count: s.tracks.length, tracks: s.tracks });
+      const list = bbox ? s.tracks.filter((t) => t.lat >= bbox.lamin && t.lat <= bbox.lamax && t.lon >= bbox.lomin && t.lon <= bbox.lomax) : s.tracks;
+      return res.json({ t: s.t, src: s.src, count: list.length, tracks: list });
     }
-    const s = domains.getSnapshot(d);
+    const s = domains.getSnapshot(d, bbox);
     const out = { t: s.t, src: s.src, count: s.movers.length, movers: s.movers };
     if (s.earthHelio) out.earthHelio = s.earthHelio;
     res.json(out);
@@ -266,6 +301,15 @@ function build() {
   });
   app.get("/api/streets/stops", (req, res) => {
     res.json({ t: Date.now(), src: "static", stops: streets.stops });
+  });
+  app.get("/api/streets/board", async (req, res) => {
+    try {
+      const board = await entur.fetchBoard({ fetchJson, lat: req.query.lat, lon: req.query.lon });
+      res.json({ t: Date.now(), src: "entur", ...board });
+    } catch (e) {
+      if (e && (e.status === 400 || e.code === "BAD_INPUT")) return res.status(400).json({ error: "lat -90..90, lon -180..180 required" });
+      res.status(502).json({ error: "transit board unreachable" });
+    }
   });
   app.get("/api/space/objects/:id", (req, res) => {
     const s = spaceSnapshot();
@@ -291,7 +335,9 @@ function build() {
   const layerDefs = [
     { id: "flights", category: "Aviation", label: "Flights", description: "Live aircraft (ADS-B)", source: "OpenSky + adsb.lol", credit: "OpenSky + adsb.lol (ODbL)", cadenceMs: Number(process.env.POLL_MS || 30000), coverage: "best-effort global", onDefault: true, kind: "snapshot", get: () => { const s = tracks(); return { src: s.src, t: s.t, states: s.tracks }; } },
     { id: "vessels", category: "Maritime", label: "Vessels", description: "Ship positions", source: "keyless AIS when configured", credit: "provider at AIS_URL", cadenceMs: Number(process.env.SEA_POLL_MS || 60000), coverage: "per feed", onDefault: false, kind: "snapshot", parked: !process.env.AIS_URL, parkedNote: "needs AIS_URL — showing sample positions", get: () => { const s = seaSnapshot(); return { src: s.src, t: s.t, states: s.movers }; } },
-    { id: "vehicles", category: "Ground transit", label: "Vehicles", description: "Transit vehicle positions", source: "city JSON feed when configured", credit: "agency at TRANSIT_URL", cadenceMs: Number(process.env.STREET_POLL_MS || 30000), coverage: "per city", onDefault: false, kind: "snapshot", parked: !process.env.TRANSIT_URL, parkedNote: "needs TRANSIT_URL — showing sample vehicles", get: () => { const s = streetsSnapshot(); return { src: s.src, t: s.t, states: s.movers }; } },
+    { id: "vehicles", category: "Ground transit", label: "Vehicles", description: "Live rail (FI/IE) + sample city vehicles; TRANSIT_URL slot for a city JSON feed", source: "Digitraffic + Irish Rail + demo", credit: "Fintraffic, Irish Rail (open data)", cadenceMs: Number(process.env.STREET_POLL_MS || 30000), coverage: "FI/IE live, sample elsewhere", onDefault: false, kind: "snapshot", get: () => { const s = streetsSnapshot(); return { src: s.src, t: s.t, states: s.movers }; } },
+    { id: "rail-fi", category: "Ground transit", label: "Finland rail", description: "Live trains (Digitraffic open data)", source: "Fintraffic Digitraffic rata", credit: "Fintraffic (open data)", cadenceMs: 30000, coverage: "Finland", onDefault: false, kind: "snapshot", get: () => { const s = fiPoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
+    { id: "rail-ie", category: "Ground transit", label: "Ireland rail", description: "Live trains (Irish Rail open data)", source: "Irish Rail realtime API", credit: "Irish Rail (open data)", cadenceMs: 60000, coverage: "Ireland", onDefault: false, kind: "snapshot", get: () => { const s = iePoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
     { id: "satellites", category: "Space", label: "Satellites", description: "TLE-propagated orbiters (predictions, not precise tracking)", source: "CelesTrak", credit: "CelesTrak (courtesy)", cadenceMs: 3600000, coverage: "catalogued objects", onDefault: false, kind: "snapshot", get: () => { const s = spaceSnapshot(); return { src: s.src, t: s.t, states: s.movers.filter((m) => m.kind === "satellite") }; } },
     { id: "airports", category: "Infrastructure", label: "Airports", description: "Major hub reference points", source: "bundled OpenFlights subset", credit: "OpenFlights", coverage: "30 world hubs", onDefault: true, kind: "static" },
     { id: "ports", category: "Infrastructure", label: "Ports", description: "Major world ports", source: "bundled reference set", coverage: "100+ ports", onDefault: false, kind: "static" },
@@ -309,16 +355,16 @@ function build() {
   app.get("/api/hazards/quakes", (req, res) => {
     const minMag = req.query.minMag == null ? 4.5 : Number(req.query.minMag);
     const limit = req.query.limit == null ? 100 : Number(req.query.limit);
-    if (!Number.isFinite(minMag) || minMag < 0 || minMag > 10 || !Number.isFinite(limit) || limit < 1 || limit > 500) {
-      return res.status(400).json({ error: "minMag 0-10, limit 1-500" });
+    if (!Number.isFinite(minMag) || minMag < 4.5 || minMag > 10 || !Number.isFinite(limit) || limit < 1 || limit > 500) {
+      return res.status(400).json({ error: "cache floor is M4.5: minMag 4.5-10, limit 1-500" });
     }
     const s = quakePoller.getSnapshot();
     const rows = (s.states || []).filter((q) => (q.mag ?? 0) >= minMag).slice(0, limit);
-    res.json({ t: s.t || Date.now(), src: s.src === "none" ? "unavailable" : s.src, count: rows.length, quakes: rows });
+    res.json({ t: s.t || null, src: s.src === "none" ? "unavailable" : s.src, count: rows.length, quakes: rows });
   });
   app.get("/api/hazards/events", (req, res) => {
     const s = eventPoller.getSnapshot();
-    res.json({ t: s.t || Date.now(), src: s.src === "none" ? "unavailable" : s.src, count: (s.states || []).length, events: s.states || [] });
+    res.json({ t: s.t || null, src: s.src === "none" ? "unavailable" : s.src, count: (s.states || []).length, events: s.states || [] });
   });
   app.get("/api/weather", async (req, res) => {
     let p;
@@ -374,7 +420,9 @@ function start(port = Number(process.env.PORT || 3000)) {
   eventPoller.start();
   swpcPoller.start();
   firePoller.start();
-  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, quakePoller, eventPoller, swpcPoller, firePoller, domains };
+  fiPoller.start();
+  iePoller.start();
+  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, quakePoller, eventPoller, swpcPoller, firePoller, fiPoller, iePoller, domains };
 }
 if (require.main === module) {
   if (process.env.OPENSKY_USER && !process.env.OPENSKY_PASS) {
@@ -383,3 +431,4 @@ if (require.main === module) {
   start();
 }
 module.exports = { build, start, enrich, tracks, poller, isoFor };
+module.exports.feeds = { quakes: quakePoller, events: eventPoller, swpc: swpcPoller, fire: firePoller, railFi: fiPoller, railIe: iePoller };

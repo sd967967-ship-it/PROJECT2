@@ -1,11 +1,30 @@
-// Ingestion internal seam: timed JSON fetch with typed errors. No app behavior elsewhere.
-async function fetchJson(url, { timeoutMs = 8000, headers = {} } = {}) {
+// Ingestion internal seam: timed JSON fetch with typed errors. Host allowlist
+// enforced (SSRF defense in depth): only documented provider hosts + localhost.
+const ALLOW_HOSTS = new Set([
+  "opensky-network.org", "api.adsb.lol", "celestrak.org",
+  "earthquake.usgs.gov", "eonet.gsfc.nasa.gov",
+  "api.open-meteo.com", "air-quality-api.open-meteo.com",
+  "services.swpc.noaa.gov", "ssd-api.jpl.nasa.gov",
+  "api.entur.io", "rata.digitraffic.fi", "api.irishrail.ie",
+  "localhost", "127.0.0.1", "::1",
+]);
+async function fetchJson(url, { timeoutMs = 8000, headers = {}, method = "GET", json } = {}) {
+  let host = "";
+  try { host = new URL(url).hostname.toLowerCase(); }
+  catch { throw Object.assign(new Error("FEED_FORBIDDEN"), { code: "FEED_FORBIDDEN" }); }
+  if (!ALLOW_HOSTS.has(host)) throw Object.assign(new Error("FEED_FORBIDDEN"), { code: "FEED_FORBIDDEN", host });
   let res;
+  const init = {
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: { "user-agent": "SkyTrack/0.1 (+https://github.com/sd967967-ship-it/PROJECT2)", ...headers },
+  };
+  if (method && method !== "GET") init.method = method;
+  if (json !== undefined) {
+    init.body = JSON.stringify(json);
+    init.headers = { "content-type": "application/json", ...init.headers };
+  }
   try {
-    res = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "user-agent": "SkyTrack/0.1 (+https://github.com/sd967967-ship-it/PROJECT2)", ...headers },
-    });
+    res = await fetch(url, init);
   } catch (e) {
     const err = new Error("FEED_OFFLINE");
     err.code = "FEED_OFFLINE"; err.cause = e; throw err;

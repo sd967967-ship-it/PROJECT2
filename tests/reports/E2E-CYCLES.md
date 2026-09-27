@@ -26,6 +26,22 @@ about:blank InfoBox iframe is filtered as benign (verified app-side, not a bug).
 ## Cycle 4 (mobile full, 7 run) — 6 pass, E-SPACE-02 failed on bug 3, then fixed.
 ## Cycle 5 (mobile E-SPACE-02 ×2) — pass; +/−/◉ all tappable above dossier.
 
+## Cycle 6 (3D-scene + CSP round)
+- E-SPACE-03 wrote the missing scene-activation test: caught our own CSP
+  blocking Cesium workers + tile hosts (black globe, render stopped).
+- Fixed `connect-src`/`worker-src` twice, each verified by re-run; added an
+  in-page tile-fetch assertion to E-APP-01 and first-party requestfailed guard.
+- Cycle 6 desktop full: 11/11 green.
+
+## Cycle 7 (council + live-rail round)
+- Quakes/events/Kp/fireballs pollers, Entur boards (verified live), Finland +
+  Ireland live rail (verified live: 114 FI + 37 IE trains), rail/metro/tram/bus
+  split with filter + mode-grouped boards, layer panel wiring, terminator,
+  weather readout, solar animation + bodies table, XSS/project hardening.
+- Desktop 14/14; mobile 9/14 → fixed rail/dossier overlap, search-driven board
+  flow, stale-click notice + retry, keyboard search results.
+- Mobile re-run: 14/14.
+
 ## Residual notes (not bugs)
 - First load ~50–80s under SwiftShader (Cesium CDN + software GL compile);
   subsequent loads ~10–25s. Device-only cost, no app change.

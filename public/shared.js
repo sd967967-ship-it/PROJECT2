@@ -75,7 +75,7 @@ const DOMAIN_PICK = { sky: "flight", sea: "vessel", streets: "vehicle", space: "
 function resetDossier(domain) {
   const dom = (domain && DOMAINS[domain]) ? domain : "sky";
   document.getElementById("pTitle").textContent = `Pick a ${DOMAIN_PICK[dom]}`;
-  document.getElementById("pSub").textContent = "Click any badge on the globe.";
+  document.getElementById("pSub").textContent = "Search above or click any badge on the globe.";
   for (const id of ["pSpeed", "pAlt", "pHdg", "pVs", "pNear", "pCap"]) document.getElementById(id).textContent = "–";
   document.getElementById("pRoute").textContent = "Position-only track";
   document.getElementById("pServices").innerHTML = "";
@@ -96,11 +96,13 @@ function renderDossier(f) {
   const dom = domainOf(f);
   if (dom !== "sky") return renderDomainDossier(f, dom);
   const al = airlineFor(f);
+  focusDossier();
+  announce(`${moverLabel(f)} details opened`);
   document.getElementById("pTitle").textContent = `${f.callsign || f.hex}${f.origin && f.dest ? ` · ${f.origin}→${f.dest}` : ""}`;
   document.getElementById("pSub").textContent = `${al.name || "Unknown operator"} · HEX ${f.hex}${f.type ? ` · ${f.type}` : ""}`;
   const fl = document.getElementById("pFlag");
   const fs = flag(al.iso);
-  if (fs) { fl.src = fs; fl.alt = al.iso; fl.hidden = false; fl.onerror = () => (fl.hidden = true); } else fl.hidden = true;
+  if (fs) { fl.src = fs; fl.alt = al.name || al.iso; fl.hidden = false; fl.onerror = () => (fl.hidden = true); } else fl.hidden = true;
   document.getElementById("pSpeed").textContent = f.velKmh != null ? `${f.velKmh} km/h` : "–";
   document.getElementById("pAlt").textContent = f.altM != null ? `${Math.round(f.altM).toLocaleString()} m` : "–";
   document.getElementById("pHdg").textContent = f.hdg != null ? `${Math.round(f.hdg)}°` : "–";
@@ -114,10 +116,10 @@ function renderDossier(f) {
   const sv = f.services && !f.services.unknown
     ? [f.services.wifi && "Wi-Fi", f.services.meals && (f.services.meals === true ? "Meals" : f.services.meals), f.services.baggage, f.services.entertainment].filter(Boolean)
     : (f.servicesList || ["Wi-Fi", "Meals", "Baggage", "IFE"]);
-  document.getElementById("pServices").innerHTML = sv.map((s) => `<li>${s}</li>`).join("");
+  document.getElementById("pServices").innerHTML = sv.map((s) => `<li>${esc(s)}</li>`).join("");
   const fares = normalizeFares(f.fares);
   document.getElementById("pFares").innerHTML = fares
-    ? Object.entries(fares).map(([k, v]) => `<tr><td>${k}</td><td>$${Number(v.avg ?? v).toLocaleString()} avg</td></tr>`).join("")
+    ? Object.entries(fares).map(([k, v]) => `<tr><td>${esc(k)}</td><td>$${Number(v.avg ?? v).toLocaleString()} avg</td></tr>`).join("")
     : "<tr><td>route unknown</td><td>–</td></tr>";
   return al;
 }
@@ -136,9 +138,14 @@ function updateTicker(list, domain) {
   const src = document.querySelector(".ticker .src");
   if (src) src.textContent = DOMAINS[dom].credit;
 }
+function focusDossier() {
+  try { document.getElementById("pTitle").focus({ preventScroll: true }); } catch { /* older engine */ }
+}
 function renderDomainDossier(f, dom) {
   const m = f.meta || {};
-  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body", craft: "Spacecraft", quake: "Earthquake", event: "Natural event", fireball: "Fireball" }[f.kind] || "Mover";
+  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body", craft: "Spacecraft", quake: "Earthquake", event: "Natural event", fireball: "Fireball", port: "Port", stop: "Transit stop" }[f.kind] || "Mover";
+  focusDossier();
+  announce(`${moverLabel(f)} details opened`);
   document.getElementById("pTitle").textContent = moverLabel(f);
   document.getElementById("pSub").textContent = `${kindName} · ${DOMAINS[dom] ? DOMAINS[dom].label : dom} · ID ${moverId(f)}`;
   document.getElementById("pFlag").hidden = true;
