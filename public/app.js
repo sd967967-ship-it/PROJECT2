@@ -356,7 +356,7 @@ async function refreshLayers() {
   const box = document.getElementById("layerRows");
   if (!box) return;
   const overlayIds = new Set(Object.keys(OVERLAYS));
-  const dots = { live: "●", delayed: "◐", cached: "◐", static: "○", unavailable: "✕" };
+  const dots = { live: "●", delayed: "◐", cached: "◐", mixed: "◑", static: "○", unavailable: "✕" };
   box.innerHTML = d.layers.map((l) => {
     const ctl = overlayIds.has(l.id)
       ? `<input type="checkbox" data-layer="${esc(l.id)}" ${state.layersOn[l.id] ? "checked" : ""} aria-label="${esc(l.label)} layer" />`
@@ -365,7 +365,8 @@ async function refreshLayers() {
     return `<label class="lrow"><span aria-hidden="true">${dots[l.state] || "?"}</span>${ctl}<span>${esc(l.label)}</span> <span class="muted-sm">${esc(l.state)}${l.note ? ` · ${esc(l.note)}` : ""} · ${when}</span></label>`;
   }).join("");
   const n = d.layers.filter((l) => l.state === "live").length;
-  document.getElementById("layerCount").textContent = `${n}/${d.layers.length} live`;
+  const m = d.layers.filter((l) => l.state === "mixed").length;
+  document.getElementById("layerCount").textContent = `${n}/${d.layers.length} live${m ? ` +${m} mixed` : ""}`;
   box.querySelectorAll("input[data-layer]").forEach((c) => c.addEventListener("change", () => setLayerOverlay(c.dataset.layer, c.checked)));
   refreshKp();
 }
@@ -691,7 +692,7 @@ function wireSearch() {
     out.innerHTML = list.map((f) => {
       const al = airlineFor(f);
       const iso = al.iso && /^[a-z]{2}$/.test(al.iso) ? al.iso : null;
-      return `<li data-id="${esc(moverId(f))}" tabindex="0" role="option">${iso ? `<img src="${flag(iso)}" alt="" loading="lazy" />` : ""}<span>${esc(moverLabel(f))}</span></li>`;
+      return `<li data-id="${esc(moverId(f))}" tabindex="0" role="option">${iso ? `<img src="${esc(flag(iso))}" alt="" loading="lazy" />` : ""}<span>${esc(moverLabel(f))}</span></li>`;
     }).join("");
     const open = (id) => { const o = findOverlayTrack(id); if (o) showOverlay(o.group, o.id); else show(id); };
     out.querySelectorAll("li").forEach((li) => {
@@ -703,7 +704,7 @@ function wireSearch() {
 async function live() {
   try {
     const s = await fetchJSON(snapshotUrl());
-    setMode(s.src === "demo" ? "demo" : "live", `${DOMAINS[state.domain].label} · ${s.src}`);
+    setMode(modeFor(s.src), `${DOMAINS[state.domain].label} · ${s.src}`);
     if (s.earthHelio) state.solar.earthHelio = s.earthHelio;
     upsert(s.tracks || s.movers || []);
     return true;
@@ -715,7 +716,7 @@ function connectWS() {
   state.ws = ws;
   ws.onopen = () => sendSub();
   ws.onmessage = (ev) => {
-    try { const m = JSON.parse(ev.data); if (m.op === "diff" && m.upsert) { setMode(m.src === "demo" ? "demo" : "live", `${DOMAINS[state.domain].label} · ${m.src}`); upsert(m.upsert); } } catch { /* keep last frame */ }
+    try { const m = JSON.parse(ev.data); if (m.op === "diff" && m.upsert) { setMode(modeFor(m.src), `${DOMAINS[state.domain].label} · ${m.src}`); upsert(m.upsert); } } catch { /* keep last frame */ }
   };
   ws.onclose = () => { state.ws = null; setTimeout(connectWS, 5000); };
 }

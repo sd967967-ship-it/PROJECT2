@@ -42,6 +42,15 @@ about:blank InfoBox iframe is filtered as benign (verified app-side, not a bug).
   flow, stale-click notice + retry, keyboard search results.
 - Mobile re-run: 14/14.
 
+## Cycle 8 (council-review fixes + black-globe root cause)
+- Council (security, UX/a11y, QA/data) re-review: fixed stored-XSS sinks,
+  fetch allowlist, mixed-source honesty, mobile overlap, dossier live-region,
+  reduced motion, touch targets, keyboard paths; P7 back to partial.
+- Black globe root-caused to our own CSP (connect-src blocked tiles,
+  worker-src blocked Cesium workers); fixed + added tile-fetch + first-party
+  requestfailed guards to E2E so the class can never regress silently.
+- Desktop 14/14, mobile 14/14, server 67/67, repo 40/40.
+
 ## Residual notes (not bugs)
 - First load ~50–80s under SwiftShader (Cesium CDN + software GL compile);
   subsequent loads ~10–25s. Device-only cost, no app change.

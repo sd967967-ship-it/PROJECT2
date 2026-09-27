@@ -11,7 +11,7 @@ function ageState(updatedMs, cadenceMs) {
 }
 function snapshotState(src, states, updatedMs, cadenceMs) {
   if (src === "live") return { state: ageState(updatedMs, cadenceMs), note: null };
-  if (src === "mixed") return { state: ageState(updatedMs, cadenceMs), note: "live rows + sample rows" };
+  if (src === "mixed") return { state: "mixed", note: "live rows + sample rows" };
   if (!states || !states.length) return { state: "unavailable", note: "no data yet" };
   if (states.every((s) => s && s.src === "demo")) {
     return { state: "unavailable", note: "sample positions until the feed is configured" };

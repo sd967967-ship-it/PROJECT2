@@ -8,7 +8,7 @@ const ALLOW_HOSTS = new Set([
   "api.entur.io", "rata.digitraffic.fi", "api.irishrail.ie",
   "localhost", "127.0.0.1", "::1",
 ]);
-async function fetchJson(url, { timeoutMs = 8000, headers = {}, method = "GET", json } = {}) {
+async function fetchJson(url, { timeoutMs = 8000, headers = {}, method = "GET", json, response = "json" } = {}) {
   let host = "";
   try { host = new URL(url).hostname.toLowerCase(); }
   catch { throw Object.assign(new Error("FEED_FORBIDDEN"), { code: "FEED_FORBIDDEN" }); }
@@ -42,6 +42,7 @@ async function fetchJson(url, { timeoutMs = 8000, headers = {}, method = "GET", 
     const err = new Error(`FEED_HTTP_${res.status}`); err.code = "FEED_HTTP"; err.status = res.status; throw err;
   }
   try {
+    if (response === "text") return { status: res.status, headers: res.headers, body: await res.text() };
     return { status: res.status, headers: res.headers, body: await res.json() };
   } catch (e) {
     const err = new Error("FEED_INVALID"); err.code = "FEED_INVALID"; err.cause = e; throw err;

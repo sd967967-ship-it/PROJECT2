@@ -68,9 +68,10 @@ function normalizeFares(fares) {
   return out;
 }
 function setMode(mode, src) {
-  document.getElementById("modeBadge").textContent = mode === "live" ? `live · ${src}` : mode;
-  document.getElementById("liveDot").classList.toggle("on", mode === "live");
+  document.getElementById("modeBadge").textContent = mode === "live" ? `live · ${src}` : (mode === "mixed" ? `mixed · ${src}` : mode);
+  document.getElementById("liveDot").classList.toggle("on", mode === "live" || mode === "mixed");
 }
+function modeFor(src) { return src === "demo" ? "demo" : (src === "mixed" ? "mixed" : "live"); }
 const DOMAIN_PICK = { sky: "flight", sea: "vessel", streets: "vehicle", space: "body" };
 function resetDossier(domain) {
   const dom = (domain && DOMAINS[domain]) ? domain : "sky";

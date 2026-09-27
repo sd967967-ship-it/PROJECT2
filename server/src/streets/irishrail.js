@@ -1,21 +1,12 @@
 // Streets live rail: Irish Rail open XML (documented at api.irishrail.ie,
-// keyless; HTTPS). Local text fetcher because fetchJson is JSON-only.
-// Fetcher accepted, never created (test seam).
+// keyless; HTTPS). Text bodies go through the shared fetchJson seam (SSRF
+// allowlist included). Fetcher accepted, never created (test seam).
 const { XMLParser } = require("fast-xml-parser");
+const { fetchJson } = require("../ingestion/fetchJson");
 const parser = new XMLParser({ ignoreAttributes: true, trimValues: true });
 async function fetchText(url, { timeoutMs = 12000 } = {}) {
-  let res;
-  try {
-    res = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "user-agent": "SkyTrack/0.1 (+https://github.com/sd967967-ship-it/PROJECT2)", accept: "application/xml" },
-    });
-  } catch (e) {
-    throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE", cause: e });
-  }
-  if (res.status === 429) throw Object.assign(new Error("FEED_RATE_LIMITED"), { code: "FEED_RATE_LIMITED" });
-  if (!res.ok) throw Object.assign(new Error(`FEED_HTTP_${res.status}`), { code: "FEED_HTTP", status: res.status });
-  return res.text();
+  const { body } = await fetchJson(url, { response: "text", timeoutMs, headers: { accept: "application/xml" } });
+  return body;
 }
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
 function str(v) { const s = String(v ?? "").trim(); return s || null; }

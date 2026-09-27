@@ -40,6 +40,7 @@ html, body { margin: 0; height: 100%; background: radial-gradient(120% 100% at 5
 .layers button, .modes button {
   flex: 1 1 22%; padding: 7px 0; border-radius: 8px; border: 1px solid var(--line);
   background: transparent; color: var(--mut); font-family: var(--display); font-size: 12.5px; cursor: pointer;
+  min-height: 44px;
 }
 .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .layers button.on, .modes button.on { color: #061033; background: var(--silver-text); border-color: #c9d4e8; font-weight: 700; }
@@ -94,7 +95,7 @@ html, body { margin: 0; height: 100%; background: radial-gradient(120% 100% at 5
 .wxblock { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
 .wxblock h3 { margin: 0 0 6px; font-size: 12px; color: var(--mut); font-weight: 500; }
 .wxblock .row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
-.wxblock button { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--cyan); background: transparent; color: var(--cyan); font-family: var(--display); font-size: 12.5px; cursor: pointer; }
+.wxblock button { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--cyan); background: transparent; color: var(--cyan); font-family: var(--display); font-size: 12.5px; cursor: pointer; min-height: 44px; }
 .wxblock select, .wxblock input[type="date"] { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: #060b16; color: var(--txt); font-family: var(--mono); font-size: 12.5px; max-width: 100%; }
 #solarRows td { font-size: 12px; }
 .ticker #airportSection {
@@ -118,6 +119,7 @@ html, body { margin: 0; height: 100%; background: radial-gradient(120% 100% at 5
   margin-top: 10px; width: 100%; padding: 9px 0; border-radius: 9px; cursor: pointer;
   background: transparent; border: 1px solid var(--cyan); color: var(--cyan);
   font-family: var(--display); font-size: 13px; font-weight: 700;
+  min-height: 44px;
 }
 #follow.on { background: var(--cyan); color: #04121a; }
 @media (max-width: 760px) {

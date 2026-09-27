@@ -10,8 +10,14 @@ test("feed pollers honor the states[] contract (singletons wrapped)", async () =
     if (rows) assert.ok(Array.isArray(rows), `${name} must yield states[]`);
   }
 });
+test("fetchJson enforces the host allowlist", async () => {
+  const { fetchJson } = require("../src/ingestion/fetchJson");
+  await assert.rejects(() => fetchJson("https://evil.example.com/x"), /FEED_FORBIDDEN/);
+  await assert.rejects(() => fetchJson("not a url"), /FEED_FORBIDDEN/);
+});
 test("status maps snapshots to layer states honestly", () => {
   assert.equal(snapshotState("live", [{ src: "x" }], Date.now(), 60000).state, "live");
+  assert.equal(snapshotState("mixed", [{ src: "x" }], Date.now(), 60000).state, "mixed");
   assert.equal(snapshotState("fallback", [{ src: "demo" }], Date.now(), 60000).state, "unavailable");
   assert.equal(snapshotState("fallback", [{ src: "ais" }], Date.now(), 60000).state, "live");
   assert.equal(snapshotState("none", [], 0, 60000).state, "unavailable");
@@ -35,7 +41,7 @@ test("GET /api/layers lists every layer with status", async () => {
       assert.ok(ids.includes(id), `missing ${id}`);
     }
     for (const l of body.layers) {
-      assert.ok(["live", "delayed", "cached", "static", "unavailable"].includes(l.state), `${l.id}:${l.state}`);
+      assert.ok(["live", "delayed", "cached", "mixed", "static", "unavailable"].includes(l.state), `${l.id}:${l.state}`);
       assert.ok(l.category && l.label);
     }
     const q = body.layers.find((l) => l.id === "quakes");

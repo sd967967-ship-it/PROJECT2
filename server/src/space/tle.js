@@ -1,24 +1,15 @@
 // Space Adapter (TLE): CelesTrak fetch (verified keyless) + satellite.js
-// propagation. Fetcher accepted, never created (test seam).
+// propagation. Fetcher accepted, never created (test seam). Text bodies go
+// through the shared fetchJson seam (SSRF allowlist included).
+const { fetchJson } = require("../ingestion/fetchJson");
 const DEMO_TLE = require("../../data/demo-satellites.json").tle;
 // Groups cover LEO (stations, visual) plus the far belt: GEO communications,
 // GNSS constellations, and weather — still a handful of requests per hour.
 const TLE_URLS = (process.env.TLE_GROUPS || "stations,visual,geo,gps-ops,galileo,glo-ops,goes").split(",").map((g) =>
   `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(g.trim())}&FORMAT=tle`);
 async function fetchText(url, { timeoutMs = 12000 } = {}) {
-  let res;
-  try {
-    res = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "user-agent": "SkyTrack/0.1 (+https://github.com/sd967967-ship-it/PROJECT2)" },
-    });
-  } catch (e) {
-    throw Object.assign(new Error("FEED_OFFLINE"), { code: "FEED_OFFLINE", cause: e });
-  }
-  if (res.status === 429) throw Object.assign(new Error("FEED_RATE_LIMITED"), { code: "FEED_RATE_LIMITED" });
-  if (res.status === 401 || res.status === 403) throw Object.assign(new Error("FEED_UNAUTHORIZED"), { code: "FEED_UNAUTHORIZED" });
-  if (!res.ok) throw Object.assign(new Error(`FEED_HTTP_${res.status}`), { code: "FEED_HTTP", status: res.status });
-  return res.text();
+  const { body } = await fetchJson(url, { response: "text", timeoutMs });
+  return body;
 }
 function parseTle(text) {
   const lines = String(text || "").split("\n").map((l) => l.trim()).filter(Boolean);

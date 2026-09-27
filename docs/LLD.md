@@ -72,7 +72,6 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | `rail-fi` | Live Finland trains (Digitraffic open data, verified live 2026-09-28) | no | exists |
 | `rail-ie` | Live Ireland trains (Irish Rail open data, verified live 2026-09-28) | no | exists |
 | `entur` | Live departure boards Norway (verified live 2026-09-28, realtime flags) | no | exists |
-| `entur` | Live departure boards (Norway), realtime/scheduled flags from the API | no | exists |
 | `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | parked |
 | `gtfs-static` | bundled `server/data/stops.json` worldwide rail/bus hubs | no | exists |
 | `solar` | Kepler math + lunar theory, zero network: Sun, Moon, 8 planets, Pluto, 5 major moons | no | exists |
