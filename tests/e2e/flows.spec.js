@@ -64,15 +64,20 @@ test("E-DETAIL-01 result click opens dossier", async ({ page, request }) => {
     return (body.tracks || []).map((t) => t.callsign).find(Boolean);
   };
   await expect(page.locator("#globe canvas")).toBeVisible({ timeout: 60000 });
-  for (let attempt = 0; attempt < 2; attempt++) {
+  let opened = false;
+  for (let attempt = 0; attempt < 2 && !opened; attempt++) {
     const cs = await pickCallsign();
     await page.getByLabel("Search flights").fill(cs.slice(0, 5));
     await page.locator("#results li").first().click();
     await expect(page.locator("#pTitle")).not.toHaveText("Pick a flight", { timeout: 8000 });
-    const title = await page.locator("#pTitle").textContent();
-    if (title !== "No longer tracked") return; // opened for real; stale otherwise → re-search once
+    opened = (await page.locator("#pTitle").textContent()) !== "No longer tracked";
   }
-  throw new Error("dossier never opened");
+  if (!opened) throw new Error("dossier never opened");
+  await page.locator("#close").click();
+  await expect(page.locator("#panel")).toBeHidden({ timeout: 5000 });
+  await page.getByLabel("Search flights").fill((await pickCallsign()).slice(0, 5));
+  await page.locator("#results li").first().click();
+  await expect(page.locator("#panel")).toBeVisible({ timeout: 15000 });
 });
 
 test("E-EMPTY-01 no-match search state", async ({ page }) => {

@@ -86,10 +86,11 @@ test("U-STATIC-11 layer panel, overlays, solar controls, no provider hosts", () 
   for (const id of ["layerPanel", "layerRows", "layerCount", "wxGo", "wxUnits", "wxOut", "kpOut", "solarBlock", "simPlay", "simSpeed", "simDate", "simReset", "simBadge", "solarRows", "srStatus", "systemBlock", "systemRow"]) {
     assert.ok(html.includes(`id="${id}"`), `missing ${id}`);
   }
-  for (const fn of ["refreshLayers", "setLayerOverlay", "refreshOverlay", "terminatorPoints", "wxAtCenter", "simTick", "buildSolarTable", "showOverlay", "announce", "state.systems"]) {
+  for (const fn of ["refreshLayers", "setLayerOverlay", "refreshOverlay", "terminatorPoints", "wxAtCenter", "simTick", "buildSolarTable", "showOverlay", "announce", "state.systems", "closeDossier", "findOverlayTrack"]) {
     assert.ok(app.includes(fn), `missing ${fn}`);
   }
   assert.ok(html.includes("data-system"), "missing transit system filter");
+  assert.ok(app.includes('getElementById("panel").hidden'), "close must hide the dossier panel");
   assert.match(shared, /function esc/);
   assert.match(shared, /PLANET_INFO/);
   assert.match(html, /not to scale/);

@@ -1,7 +1,7 @@
 // SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
 const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", domain: "sky", ws: null, all: [], imagery: {}, airports: [], solar: { active: false, entities: new Map(), earthHelio: null }, selectedHex: null, followHex: null, trails: new Map() };
 const REDUCED = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } })();
-function flyDur(s) { return REDUCED ? 0 : s; }
+function flyDur(s = 1.5) { return REDUCED ? 0 : s; }
 function pushTrail(f) {
   if (!f || f.hex == null) return;
   let t = state.trails.get(f.hex);
@@ -615,9 +615,21 @@ function drawRoute(arc) {
   state.routeEnt = v.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArrayHeights(arc.flatMap((p) => [p[1], p[0], 11000])), width: 2, material: Cesium.Color.fromCssColorString("#57e6ff") } });
   v.scene.requestRender();
 }
+function closeDossier() {
+  drawRoute(null);
+  state.selectedHex = null;
+  state.followHex = null;
+  document.getElementById("follow").classList.remove("on");
+  document.getElementById("follow").setAttribute("aria-pressed", "false");
+  drawSelectedTrail();
+  resetDossier(state.domain);
+  document.getElementById("panel").hidden = true;
+  announce("Details closed");
+}
 async function showOverlay(group, id) {
   const t = state.overlayData.get(group) && state.overlayData.get(group).get(id);
   if (!t) return;
+  document.getElementById("panel").hidden = false;
   renderDomainDossier(t, state.domain);
   state.selectedHex = null;
   drawRoute(null);
@@ -651,11 +663,13 @@ async function show(hex) {
   }
   if (!f) {
     // Live data churns: a searched mover can rotate out before the click lands.
+    document.getElementById("panel").hidden = false;
     document.getElementById("pTitle").textContent = "No longer tracked";
     document.getElementById("pSub").textContent = "That mover left live coverage. Search again for current results.";
     announce("Selected mover is no longer tracked");
     return;
   }
+  document.getElementById("panel").hidden = false;
   renderDossier(f);
   state.selectedHex = hex;
   drawRoute(f.route && f.route.arc);
@@ -736,7 +750,10 @@ function connectWS() {
   wireSearch();
   wireModes();
   document.querySelectorAll(".layers button").forEach((b) => b.addEventListener("click", () => setLayer(b.dataset.lyr)));
-  document.getElementById("close").addEventListener("click", () => { drawRoute(null); state.selectedHex = null; drawSelectedTrail(); resetDossier(state.domain); announce("Details closed"); });
+  document.getElementById("close").addEventListener("click", closeDossier);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.getElementById("panel").hidden) closeDossier();
+  });
   document.getElementById("follow").addEventListener("click", () => { if (state.selectedHex) setFollow(state.selectedHex); });
   const stepZoom = (dir) => {
     const v = state.viewer;
