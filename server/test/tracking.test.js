@@ -74,11 +74,16 @@ test("detail + stops + solar endpoints answer", async () => {
     const vh = await (await fetch(`${base}/api/streets/vehicles/${st.movers[0].id}`)).json();
     assert.ok(vh.vehicle && vh.vehicle.label);
     const stops = await (await fetch(`${base}/api/streets/stops`)).json();
-    assert.ok(stops.stops.length >= 10);
+    assert.ok(stops.stops.length >= 60);
     const sp = await (await fetch(`${base}/api/space/snapshot`)).json();
     const o = await (await fetch(`${base}/api/space/objects/${encodeURIComponent(sp.movers[0].id)}`)).json();
     assert.ok(o.object && o.object.label);
     const solar = await (await fetch(`${base}/api/space/solar`)).json();
-    assert.ok(solar.count >= 9 && solar.bodies.some((b) => b.id === "solar-sun"));
+    assert.ok(solar.count >= 15 && solar.bodies.some((b) => b.id === "solar-sun"));
+    assert.ok(solar.bodies.some((b) => b.id === "solar-titan"));
+    const craft = await (await fetch(`${base}/api/space/craft`)).json();
+    assert.ok(craft.count >= 12 && craft.craft.every((c) => c.agency && c.target));
+    const sp2 = await (await fetch(`${base}/api/space/snapshot`)).json();
+    assert.ok(sp2.movers.some((m) => m.kind === "craft"));
   } finally { srv.close(); }
 });

@@ -39,7 +39,7 @@ function glyphIcon(f) {
     ? `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><rect x="-9" y="-15" width="18" height="30" rx="4"/><rect x="-6" y="-11" width="12" height="6" fill="#0b2036" stroke="none"/></g>`
     : f.kind === "satellite"
     ? `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><rect x="-13" y="-4" width="8" height="8"/><rect x="5" y="-4" width="8" height="8"/><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)"/></g>`
-    : `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><circle r="10"/><circle r="16" fill="none"/></g>`;
+    : `<g stroke="${color}" stroke-width="2.5" fill="none"><circle r="10" fill="${color}"/><path d="M0,-24 L0,-14 M0,14 L0,24 M-24,0 L-14,0 M14,0 L24,0"/></g>`;
   return L.divIcon({
     className: "plane-icon",
     html: `<svg viewBox="-30 -30 60 60" width="30" height="30">${inner}</svg>`,

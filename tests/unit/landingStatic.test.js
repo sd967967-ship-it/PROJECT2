@@ -73,9 +73,11 @@ test("U-STATIC-10 four tracking modes over backend only", () => {
   for (const d of ["sky", "sea", "streets", "space"]) assert.ok(html.includes(`data-domain="${d}"`), `missing mode ${d}`);
   assert.match(html, /aria-label="Tracking mode"/);
   for (const u of ["/api/sea/vessels/", "/api/streets/vehicles/", "/api/space/objects/"]) assert.ok(shared.includes(u), `missing ${u}`);
+  assert.ok(app.includes('"craft"') || two.includes('"craft"'), "missing craft markers");
   assert.ok(app.includes("/api/${state.domain}/snapshot") || two.includes("/api/${state2d.domain}/snapshot"), "missing domain snapshot hook");
   assert.ok(app.includes('domain: state.domain') || two.includes('domain: state2d.domain'), "missing domain ws sub");
   assert.match(shared, /DOMAINS/);
+  assert.match(shared, /Spacecraft/);
   assert.match(shared, /renderDomainDossier/);
   for (const src of [app, two, shared, html]) {
     assert.doesNotMatch(src, /celestrak\.org/i);

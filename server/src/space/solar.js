@@ -30,7 +30,17 @@ const ELEMENTS = {
   saturn: [9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448, -0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794],
   uranus: [19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.96427630, 74.01692503, -0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589],
   neptune: [30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574, 0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664],
+  pluto: [39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684, 0, 0, 0, 0, 0, 0],
 };
+// Major moons: circular-orbit approximation around the parent (periods and
+// radii real; subpoint error bounded by orbit radius, noted as approximate).
+const MOONS = [
+  { id: "io", label: "Io", parent: "jupiter", aKm: 421700, periodD: 1.769, inclDeg: 0.1, phase0: 0.0 },
+  { id: "europa", label: "Europa", parent: "jupiter", aKm: 671034, periodD: 3.551, inclDeg: 0.5, phase0: 2.2 },
+  { id: "ganymede", label: "Ganymede", parent: "jupiter", aKm: 1070412, periodD: 7.155, inclDeg: 0.2, phase0: 4.1 },
+  { id: "callisto", label: "Callisto", parent: "jupiter", aKm: 1882709, periodD: 16.689, inclDeg: 0.3, phase0: 1.2 },
+  { id: "titan", label: "Titan", parent: "saturn", aKm: 1221870, periodD: 15.945, inclDeg: 0.4, phase0: 5.3 },
+];
 function helioAu(name, T) {
   const el = ELEMENTS[name];
   const a = el[0] + el[6] * T, e = el[1] + el[7] * T;
@@ -93,7 +103,9 @@ function moonGeo(date) {
 function getSolarBodies(date = new Date()) {
   const T = (julian(date) - 2451545.0) / 36525;
   const gmst = gmstDeg(date);
-  const earth = helioAu("earth", T);
+  const P = {};
+  for (const k of Object.keys(ELEMENTS)) P[k] = helioAu(k, T);
+  const earth = P.earth;
   const out = [];
   const push = (id, label, g, distKm, extra) => {
     const sp = subpoint(g[0], g[1], g[2], gmst);
@@ -111,11 +123,23 @@ function getSolarBodies(date = new Date()) {
   push("solar-moon", "Moon", [moon.x, moon.y, moon.z], rm * AU_KM, {
     illum: +((1 - Math.cos(moon.elongDeg * D2R)) / 2).toFixed(3),
   });
-  for (const name of ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune"]) {
-    const p = helioAu(name, T);
+  for (const name of ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]) {
+    const p = P[name];
     const g = [p[0] - earth[0], p[1] - earth[1], p[2] - earth[2]];
     const label = name[0].toUpperCase() + name.slice(1);
     push(`solar-${name}`, label, g, Math.hypot(...g) * AU_KM);
+  }
+  const dDays = julian(date) - 2451545.0;
+  for (const mn of MOONS) {
+    const ph = mn.phase0 + 2 * Math.PI * (dDays / mn.periodD);
+    const rAu = mn.aKm / AU_KM;
+    const ci = Math.cos(mn.inclDeg * D2R), si = Math.sin(mn.inclDeg * D2R);
+    const pp = P[mn.parent];
+    const g = [pp[0] - earth[0] + rAu * Math.cos(ph), pp[1] - earth[1] + rAu * Math.sin(ph) * ci, pp[2] - earth[2] + rAu * Math.sin(ph) * si];
+    const parentLabel = mn.parent[0].toUpperCase() + mn.parent.slice(1);
+    push(`solar-${mn.id}`, mn.label, g, Math.hypot(...g) * AU_KM, {
+      body: mn.label, parent: parentLabel, orbitKm: mn.aKm, periodD: mn.periodD, approx: true,
+    });
   }
   return out;
 }

@@ -19,7 +19,8 @@ _Last updated: 2026-09-27_
 - Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
 - QA rounds 2+3 — 2026-09-27 — 15 cycles (13–27), 825/825 checks green; zoom + favicon fixes verified; feed stable ~800 merged tracks; release verdict conditionally-ready; `tests/reports/QA-FINAL.md`.
 - Multimodal plan adopted — 2026-09-27 — docs aligned to `multimodal-space-plan.md`: TrackingSource seam, P6–P9 stories, domain Adapter registry (aiscast/CelesTrak/NTES/GTFS-RT verified keyless), key policy (agent never creates accounts), activation = config-only per WORKFLOW.md.
-- All transports shipped — 2026-09-27 — `server/src/tracking/source.js` seam + sea/streets/space adapters, mode switcher, per-domain API + ws, 39 server / 39 repo tests green; sea/streets live paths parked behind `AIS_URL`/`TRANSIT_URL` (demo + ports/stops bundled), space live via CelesTrak + math-only solar.
+- All transports shipped — 2026-09-27 — `server/src/tracking/source.js` seam + sea/streets/space adapters, mode switcher, per-domain API + ws, 40 server / 39 repo tests green; sea/streets live paths parked behind `AIS_URL`/`TRANSIT_URL` (demo + ports/stops bundled), space live via CelesTrak + math-only solar.
+- Worldwide + deep space round — 2026-09-27 — 100+ ports, 70 rail/bus stops worldwide; TLE movers carry period/inclination/apsides/class/launch year; solar adds Pluto + 5 major moons; 18 human-made craft as vicinity markers (`/api/space/craft`); playwright-best-practices skill installed (86.9K installs, low-risk) for future real-browser E2E.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.

@@ -27,7 +27,7 @@ function moverId(f) { return (f && (f.hex || f.id)) || ""; }
 function moverLabel(f) { return (f && (f.label || f.callsign || f.hex || f.id)) || ""; }
 function searchFields(f) {
   const m = (f && f.meta) || {};
-  return `${moverLabel(f)} ${moverId(f)} ${f.origin || ""} ${f.dest || ""} ${m.route || m.dest || m.type || m.body || ""} ${m.flag || ""} ${m.status || ""}`;
+  return `${moverLabel(f)} ${moverId(f)} ${f.origin || ""} ${f.dest || ""} ${m.route || m.dest || m.type || m.body || ""} ${m.flag || ""} ${m.status || ""} ${m.agency || ""} ${m.target || ""}`;
 }
 function airlineFor(f) {
   const prefix = (f.callsign || "").trim().slice(0, 3).toUpperCase();
@@ -95,7 +95,7 @@ function updateTicker(list, domain) {
 }
 function renderDomainDossier(f, dom) {
   const m = f.meta || {};
-  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body" }[f.kind] || "Mover";
+  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body", craft: "Spacecraft" }[f.kind] || "Mover";
   document.getElementById("pTitle").textContent = moverLabel(f);
   document.getElementById("pSub").textContent = `${kindName} · ${DOMAINS[dom].label} · ID ${moverId(f)}`;
   document.getElementById("pFlag").hidden = true;
@@ -105,14 +105,18 @@ function renderDomainDossier(f, dom) {
   document.getElementById("pSpeed").textContent = f.velKmh != null ? `${Number(f.velKmh).toLocaleString()} km/h` : "–";
   document.getElementById("pAlt").textContent = alt;
   document.getElementById("pHdg").textContent = f.hdg != null ? `${Math.round(f.hdg)}°` : "–";
-  document.getElementById("pVs").textContent = m.draughtM != null ? `${m.draughtM} m draught` : (m.status || m.noradId || "–");
+  document.getElementById("pVs").textContent = m.draughtM != null ? `${m.draughtM} m draught`
+    : f.kind === "satellite" && m.periodMin != null ? `${m.periodMin} min period · ${m.inclDeg}° incl`
+    : (m.status || m.noradId || "–");
   const near = f.near ? `${f.near.iata || ""}${f.near.city ? ` · ${f.near.city}` : ""} · ${Number(f.near.distKm || 0).toLocaleString()} km` : "–";
   document.getElementById("pNear").textContent = near;
-  const cap = f.kind === "solar" && m.distKm != null ? `${m.distKm.toLocaleString()} km${m.distAu != null ? ` · ${m.distAu} AU` : ""}${m.illum != null ? ` · ${(m.illum * 100).toFixed(1)}% lit` : ""}`
+  const cap = f.kind === "solar" && m.distKm != null ? `${m.distKm.toLocaleString()} km${m.distAu != null ? ` · ${m.distAu} AU` : ""}${m.illum != null ? ` · ${(m.illum * 100).toFixed(1)}% lit` : ""}${m.parent ? ` · orbits ${m.parent}` : ""}${m.periodD != null ? ` · ${m.periodD}d period` : ""}`
+    : f.kind === "satellite" ? [m.noradId && `NORAD ${m.noradId}`, m.class && `class ${m.class}`, m.launchYear && `launched ${m.launchYear}`, m.apogeeKm != null && m.perigeeKm != null ? `${m.perigeeKm.toLocaleString()}–${m.apogeeKm.toLocaleString()} km` : null].filter(Boolean).join(" · ") || "–"
+    : f.kind === "craft" ? [m.agency, m.mission, m.target && `@ ${m.target}`, m.launchYear && `launched ${m.launchYear}`, m.status].filter(Boolean).join(" · ") || "–"
     : [m.type, m.flag && `flag ${m.flag}`, m.route, m.dest && `→ ${m.dest}`, m.next && `next ${m.next}`].filter(Boolean).join(" · ") || "–";
   document.getElementById("pCap").textContent = cap;
   document.getElementById("pRoute").textContent = m.route ? `${m.route}${m.next ? ` → ${m.next}` : ""}${m.status ? ` · ${m.status}` : ""}`
-    : m.dest ? `→ ${m.dest}` : "Position-only track";
+    : m.dest ? `→ ${m.dest}` : (m.target ? `@ ${m.target}${m.status ? ` · ${m.status}` : ""} · vicinity marker` : "Position-only track");
   document.getElementById("pServices").innerHTML = [m.type, m.flag, m.status, m.body].filter(Boolean).map((s) => `<li>${s}</li>`).join("") || "<li>–</li>";
   document.getElementById("pFares").innerHTML = "<tr><td>fares</td><td>sky only</td></tr>";
   document.getElementById("pFine").textContent = dom === "space" && f.kind === "solar"

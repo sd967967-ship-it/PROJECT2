@@ -22,9 +22,9 @@ Live map + detail panel served from one free backend + one free frontend host. D
 | P3 | viewer | filter to my viewport with smooth markers | map stays fast globally | done (1200 cap + clustering + requestRenderMode) |
 | P4 | viewer | see airport departures/arrivals derived from live tracks | I can browse hubs | partial (nearest-hub per track; board pending) |
 | P5 | builder | run everything on free tiers with no API keys | cost stays zero | done |
-| P6 | viewer | track satellites live + tour the solar system with moons | space is as explorable as sky | done 2026-09-27 (keyless TLE belt + solar-subpoint tour; demo elements offline) |
-| P7 | viewer | track ships live worldwide | sea joins the same globe UI | done 2026-09-27 (demo + ports; live AIS parked behind `AIS_URL`) |
-| P8 | viewer | track Indian trains live + browse worldwide transit stops | ground joins the same UI | done 2026-09-27 (demo + static stops; live vehicles parked behind `TRANSIT_URL`) |
+| P6 | viewer | track satellites live + tour the solar system with moons | space is as explorable as sky | done 2026-09-27 (keyless TLE belt with per-sat details + Sun/Moon/planets/Pluto/5 moons + 18 crewed-craft vicinity markers; demo elements offline) |
+| P7 | viewer | track ships live worldwide | sea joins the same globe UI | done 2026-09-27 (demo + 100 worldwide ports; live AIS parked behind `AIS_URL`) |
+| P8 | viewer | track Indian trains live + browse worldwide transit stops | ground joins the same UI | done 2026-09-27 (demo + 70 worldwide rail/bus stops; live vehicles parked behind `TRANSIT_URL`) |
 | P9 | viewer | switch Sky/Sea/Streets/Space modes without relearning the UI | one app for every domain | done 2026-09-27 |
 
 ## Out of scope (explicitly not building yet)

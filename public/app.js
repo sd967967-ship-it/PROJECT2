@@ -66,6 +66,11 @@ function glyphBillboard(kind, color, hdg) {
     g.fillStyle = color;
     g.save(); g.translate(36, 36); g.rotate(Math.PI / 4); g.fillRect(-9, -9, 18, 18); g.restore(); g.strokeRect(27, 27, 18, 18);
     g.fillRect(10, 32, 14, 8); g.fillRect(48, 32, 14, 8);
+  } else if (kind === "craft") {
+    g.strokeStyle = color; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(36, 12); g.lineTo(36, 60); g.moveTo(12, 36); g.lineTo(60, 36); g.stroke();
+    g.fillStyle = color;
+    g.save(); g.translate(36, 36); g.rotate(Math.PI / 4); g.fillRect(-7, -7, 14, 14); g.restore();
   } else { // solar body: glowing disc
     g.fillStyle = color;
     g.beginPath(); g.arc(36, 36, 16, 0, Math.PI * 2); g.fill(); g.stroke();
@@ -77,8 +82,8 @@ function glyphBillboard(kind, color, hdg) {
 function iconFor(f) {
   const k = f.kind || "flight";
   if (k === "flight") return planeBillboard(f.hdg);
-  const color = (DOMAINS[state.domain] || DOMAINS.sky).color;
-  return glyphBillboard(k, color, f.hdg);
+  if (k === "craft" || k === "satellite" || k === "vessel" || k === "vehicle" || k === "solar") return glyphBillboard(k, (DOMAINS[state.domain] || DOMAINS.sky).color, f.hdg);
+  return glyphBillboard("solar", (DOMAINS[state.domain] || DOMAINS.sky).color, f.hdg);
 }
 function snapshotUrl() { return state.domain === "sky" ? "/api/snapshot" : `/api/${state.domain}/snapshot`; }
 function detailUrlFor(id) { return DOMAINS[state.domain].detail(id); }

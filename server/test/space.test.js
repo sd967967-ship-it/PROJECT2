@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const sat = require("satellite.js");
 const { parseTle, demoSets, propagateToMovers, createTleStore } = require("../src/space/tle");
 const { getSolarBodies } = require("../src/space/solar");
+const { CRAFT, toMovers } = require("../src/space/craft");
 
 const ISS_L1 = "1 25544U 98067A   26270.17419514  .00009528  00000+0  18291-3 0  9996";
 const ISS_L2 = "2 25544  51.6315 155.3455 0007168 193.0559 167.0244 15.48664528587569";
@@ -16,6 +17,12 @@ test("tle parses 3-line sets, skips garbage", () => {
 test("tle propagates to plausible LEO movers", () => {
   const m = propagateToMovers(demoSets(), new Date(), sat, "demo");
   assert.ok(m.length >= 3);
+  const iss = m.find((s) => s.id === "sat-25544");
+  assert.ok(iss, "ISS present");
+  assert.ok(Math.abs(iss.meta.inclDeg - 51.63) < 0.2, `incl ${iss.meta.inclDeg}`);
+  assert.ok(Math.abs(iss.meta.periodMin - 93.0) < 0.6, `period ${iss.meta.periodMin}`);
+  assert.equal(iss.meta.launchYear, 1998);
+  assert.ok(iss.meta.perigeeKm > 350 && iss.meta.apogeeKm < 500, `apsides ${iss.meta.perigeeKm}/${iss.meta.apogeeKm}`);
   for (const s of m) {
     assert.ok(Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
     assert.ok(s.altM > 100000 && s.altM < 2000000, `alt ${s.altM}`);
@@ -36,7 +43,7 @@ test("tle store serves demo at boot, goes live on refresh", async () => {
 });
 test("solar subpoints are sane", () => {
   const bodies = getSolarBodies(new Date("2026-09-27T12:00:00Z"));
-  assert.ok(bodies.length >= 9);
+  assert.ok(bodies.length >= 15);
   const sun = bodies.find((b) => b.id === "solar-sun");
   assert.ok(Math.abs(sun.lat) <= 23.6, `subsolar lat ${sun.lat}`);
   assert.ok(Math.abs(sun.lon) <= 180);
@@ -44,9 +51,34 @@ test("solar subpoints are sane", () => {
   const moon = bodies.find((b) => b.id === "solar-moon");
   assert.ok(moon.meta.distKm > 350000 && moon.meta.distKm < 410000, `moon ${moon.meta.distKm}`);
   assert.ok(moon.meta.illum >= 0 && moon.meta.illum <= 1);
+  const pluto = bodies.find((b) => b.id === "solar-pluto");
+  assert.ok(pluto.meta.distKm > 29 * 149597870 && pluto.meta.distKm < 50 * 149597870, `pluto ${pluto.meta.distKm}`);
+  const titan = bodies.find((b) => b.id === "solar-titan");
+  assert.equal(titan.meta.parent, "Saturn");
+  assert.equal(titan.meta.orbitKm, 1221870);
+  const io = bodies.find((b) => b.id === "solar-io");
+  assert.equal(io.meta.parent, "Jupiter");
   for (const b of bodies) {
     assert.ok(Number.isFinite(b.lat) && Number.isFinite(b.lon) && b.meta.distKm > 0, b.id);
     assert.equal(b.domain, "space");
     assert.equal(b.kind, "solar");
   }
+});
+test("craft dataset anchors vicinity movers on target bodies", () => {
+  assert.ok(CRAFT.length >= 12);
+  assert.ok(CRAFT.every((c) => c.id && c.name && c.agency && c.target && c.anchor && c.mission && c.launchYear && c.status));
+  const bodies = getSolarBodies(new Date());
+  const byId = {};
+  for (const b of bodies) byId[b.id] = b;
+  const movers = toMovers(CRAFT, byId);
+  assert.equal(movers.length, CRAFT.length);
+  for (const m of movers) {
+    assert.equal(m.domain, "space");
+    assert.equal(m.kind, "craft");
+    assert.ok(Math.abs(m.lat) <= 90 && Math.abs(m.lon) <= 180);
+    assert.ok(m.meta.vicinity && m.meta.agency && m.meta.target);
+  }
+  const lro = movers.find((m) => m.id === "craft-lro");
+  const moon = byId["solar-moon"];
+  assert.ok(Math.abs(lro.lat - moon.lat) < 5 && Math.abs(lro.lon - moon.lon) < 5);
 });

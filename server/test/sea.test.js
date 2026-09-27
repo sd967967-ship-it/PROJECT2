@@ -28,7 +28,7 @@ test("sea live requires a configured URL (parked otherwise)", async () => {
   const live = await fetchLive({ fetchJson: async () => ({ body: [{ mmsi: "9", lat: 1, lon: 1 }] }), url: "https://example.invalid/vessels" });
   assert.equal(live.length, 1);
 });
-test("sea demo vessels + ports bundled", () => {
+test("sea demo vessels + worldwide ports bundled", () => {
   assert.ok(demoVessels().length >= 5 && demoVessels().every((v) => v.src === "demo"));
-  assert.ok(ports.length >= 10 && ports.every((p) => p.code && Number.isFinite(p.lat)));
+  assert.ok(ports.length >= 60 && ports.every((p) => p.code && Number.isFinite(p.lat)));
 });

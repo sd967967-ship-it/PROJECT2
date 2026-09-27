@@ -41,6 +41,33 @@ async function fetchSets({ fetchTextFn = fetchText, urls = TLE_URLS } = {}) {
   return out;
 }
 function demoSets() { return parseTle(DEMO_TLE); }
+// Orbital details straight from the element lines: inclination, period,
+// eccentricity, apogee/perigee (via mean motion), classification, launch year.
+const MU_KM3S2 = 398600.4418, EARTH_R_KM = 6378.14;
+function tleDetails(l1, l2) {
+  const cls = ((l1 && l1[7]) || "U").trim() || "U";
+  const yy = parseInt(String(l1 || "").substring(9, 11), 10);
+  const launchYear = Number.isFinite(yy) ? (yy >= 57 ? 1900 + yy : 2000 + yy) : null;
+  const inclDeg = parseFloat(String(l2 || "").substring(8, 16));
+  const ecc = parseFloat("0." + String(l2 || "").substring(26, 33).trim());
+  const mm = parseFloat(String(l2 || "").substring(52, 63)); // rev/day
+  let periodMin = null, apogeeKm = null, perigeeKm = null;
+  if (mm > 0) {
+    periodMin = 1440 / mm;
+    const n = (mm * 2 * Math.PI) / 86400; // rad/s
+    const a = Math.cbrt(MU_KM3S2 / (n * n));
+    if (ecc >= 0 && ecc < 1) { apogeeKm = a * (1 + ecc) - EARTH_R_KM; perigeeKm = a * (1 - ecc) - EARTH_R_KM; }
+  }
+  return {
+    inclDeg: Number.isFinite(inclDeg) ? +inclDeg.toFixed(2) : null,
+    periodMin: periodMin != null ? +periodMin.toFixed(1) : null,
+    ecc: Number.isFinite(ecc) ? ecc : null,
+    apogeeKm: apogeeKm != null ? Math.round(apogeeKm) : null,
+    perigeeKm: perigeeKm != null ? Math.round(perigeeKm) : null,
+    class: cls,
+    launchYear,
+  };
+}
 function propagateToMovers(sets, now, sat, src) {
   const out = [];
   for (const s of sets) {
@@ -59,7 +86,7 @@ function propagateToMovers(sets, now, sat, src) {
         id: `sat-${s.noradId}`, domain: "space", kind: "satellite",
         lat, lon, altM: Math.round(geo.height * 1000),
         velKmh, hdg: null, label: s.name,
-        meta: { noradId: s.noradId },
+        meta: { noradId: s.noradId, ...tleDetails(s.l1, s.l2) },
         src: src || "tle",
       });
     } catch { /* one bad element must not sink the belt */ }
@@ -84,4 +111,4 @@ function createTleStore({ fetchSetsFn = fetchSets, refreshMs = Number(process.en
     stop() { clearInterval(store.timer); store.timer = null; },
   };
 }
-module.exports = { fetchText, parseTle, fetchSets, demoSets, propagateToMovers, createTleStore, TLE_URLS };
+module.exports = { fetchText, parseTle, fetchSets, demoSets, tleDetails, propagateToMovers, createTleStore, TLE_URLS };

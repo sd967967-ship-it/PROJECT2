@@ -24,7 +24,9 @@ test("streets movers carry domain and status", () => {
 test("streets live requires a configured URL (parked otherwise)", async () => {
   await assert.rejects(() => fetchLive({ fetchJson: async () => ({}) }), /FEED_OFFLINE/);
 });
-test("streets demo vehicles + stops bundled", () => {
+test("streets demo vehicles + worldwide rail/bus stops bundled", () => {
   assert.ok(demoVehicles().length >= 5 && demoVehicles().every((v) => v.src === "demo"));
-  assert.ok(stops.length >= 10 && stops.every((s) => s.id && Number.isFinite(s.lat)));
+  assert.ok(stops.length >= 60 && stops.every((s) => s.id && Number.isFinite(s.lat)));
+  assert.ok(stops.some((s) => (s.modes || []).includes("bus")), "bus hubs present");
+  assert.ok(stops.some((s) => (s.modes || []).includes("rail")), "rail hubs present");
 });

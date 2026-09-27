@@ -18,6 +18,7 @@ const sea = require("./sea/aisAdapter");
 const streets = require("./streets/transitAdapter");
 const tle = require("./space/tle");
 const solar = require("./space/solar");
+const craft = require("./space/craft");
 const satellite = require("satellite.js");
 const { DOMAINS, DOMAIN_META, assertDomain, deriveSrc, createRegistry } = require("./tracking/source");
 
@@ -128,8 +129,11 @@ function streetsSnapshot() {
 function spaceSnapshot() {
   const now = new Date();
   const satMovers = tle.propagateToMovers(tleStore.sets(), now, satellite, tleStore.src());
-  const solarMovers = solar.getSolarBodies(now);
-  return { t: now.getTime(), src: tleStore.src(), movers: [...satMovers, ...solarMovers] };
+  const bodies = solar.getSolarBodies(now);
+  const byId = {};
+  for (const b of bodies) byId[b.id] = b;
+  const craftMovers = craft.toMovers(craft.CRAFT, byId);
+  return { t: now.getTime(), src: tleStore.src(), movers: [...satMovers, ...bodies, ...craftMovers] };
 }
 const domains = createRegistry({
   sky: { getSnapshot: () => { const s = tracks(); return { t: s.t, src: s.src, movers: s.tracks.map(skyToMover) }; } },
@@ -233,6 +237,9 @@ function build() {
   app.get("/api/space/solar", (req, res) => {
     const bodies = solar.getSolarBodies(new Date());
     res.json({ t: Date.now(), src: "solar", count: bodies.length, bodies });
+  });
+  app.get("/api/space/craft", (req, res) => {
+    res.json({ t: Date.now(), src: "static", count: craft.CRAFT.length, craft: craft.CRAFT });
   });
   app.use(express.static(path.join(__dirname, "..", "..", "public")));
   return app;
