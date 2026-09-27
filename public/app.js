@@ -122,8 +122,33 @@ function ensureSingle(v, f, pos) {
   e.track = f; e.cluster = null;
   return e;
 }
+function updateAirportCounts(list) {
+  // Count tracks per nearest airport hub from the current snapshot for P4 airport board
+  const airportCounts = new Map();
+  for (const f of list) {
+    if (f.near && f.near.iata) {
+      airportCounts.set(f.near.iata, (airportCounts.get(f.near.iata) || 0) + 1);
+    }
+  }
+  // Update ticker airport section
+  const airportSection = document.getElementById("airportSection");
+  if (!airportSection) return;
+  if (airportCounts.size === 0) {
+    airportSection.hidden = true;
+    return;
+  }
+  let parts = [];
+  for (const [iata, count] of airportCounts) {
+    parts.push(`${iata}: ${count}`);
+  }
+  airportSection.textContent = parts.slice(0, 3).join(" | ");
+  airportSection.hidden = false;
+}
+
 function upsert(list) {
   const v = state.viewer, seen = new Set();
+  // Track airport counts for P4 airport board
+  updateAirportCounts(list);
   let cell = 15;
   try { cell = Math.min(15, Math.max(0.5, v.camera.positionCartographic.height / 111320 / 10)); } catch { /* fixed grid */ }
   const groups = new Map();
@@ -161,7 +186,7 @@ function upsert(list) {
   state.all = list;
   updateTicker(list);
   drawSelectedTrail();
-  v.scene.requestRender();
+  v.scene.render();
 }
 function drawSelectedTrail() {
   const v = state.viewer;

@@ -22,6 +22,7 @@ _Last updated: 2026-09-27_
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
+- Airport board live on `development` (ticker shows top-3 airport codes w/ track counts) + ticker polish; localhost verified `200` on `/`, `/api/health`, `/api/snapshot`.
 
 ## ⏭️ Next up (done, kept for history)
 1. ~~Lift code freeze → scaffold `server/`~~ done 2026-09-27.
