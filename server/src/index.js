@@ -21,6 +21,11 @@ const solar = require("./space/solar");
 const craft = require("./space/craft");
 const satellite = require("satellite.js");
 const { DOMAINS, DOMAIN_META, assertDomain, deriveSrc, createRegistry } = require("./tracking/source");
+const quakes = require("./geo/quakes");
+const events = require("./geo/events");
+const wx = require("./geo/wx");
+const spacewx = require("./geo/spacewx");
+const status = require("./status");
 
 const AIRPORTS = require("../data/airports.json");
 const COUNTRIES = require("../data/countries.json");
@@ -105,6 +110,25 @@ const streetsPoller = new Poller({
   intervalMs: Number(process.env.STREET_POLL_MS || 30000),
 });
 const tleStore = tle.createTleStore();
+// Hazard + space-weather pollers (keyless public feeds; empty cache reads as
+// unavailable in /api/layers, never as live).
+const quakePoller = new Poller({
+  fetchPrimary: () => quakes.fetchQuakes({ fetchJson }),
+  intervalMs: 300000,
+});
+const eventPoller = new Poller({
+  fetchPrimary: () => events.fetchEvents({ fetchJson }),
+  intervalMs: 1800000,
+});
+const swpcPoller = new Poller({
+  fetchPrimary: () => spacewx.fetchKp({ fetchJson }),
+  intervalMs: 900000,
+});
+const firePoller = new Poller({
+  fetchPrimary: () => spacewx.fetchFireballs({ fetchJson }),
+  intervalMs: 3600000,
+});
+let lastWx = null; // {t} — weather is queried on demand, never polled
 function skyToMover(t) {
   return {
     id: t.hex, domain: "sky", kind: "flight",
@@ -133,7 +157,7 @@ function spaceSnapshot() {
   const byId = {};
   for (const b of bodies) byId[b.id] = b;
   const craftMovers = craft.toMovers(craft.CRAFT, byId);
-  return { t: now.getTime(), src: tleStore.src(), movers: [...satMovers, ...bodies, ...craftMovers] };
+  return { t: now.getTime(), src: tleStore.src(), movers: [...satMovers, ...bodies, ...craftMovers], earthHelio: solar.earthHelio(now) };
 }
 const domains = createRegistry({
   sky: { getSnapshot: () => { const s = tracks(); return { t: s.t, src: s.src, movers: s.tracks.map(skyToMover) }; } },
@@ -159,6 +183,19 @@ function spaceDetail(id) {
 function build() {
   const app = express();
   app.disable("x-powered-by");
+  // Baseline hardening (no new deps): no sniffing, no framing by others,
+  // tight referrer, locked-down plugins. script-src stays permissive for the
+  // Cesium CDN bundle (eval + WASM) and the inline boot script by design —
+  // host-allowlisted so injected markup cannot pull scripts from elsewhere
+  // (XSS defense itself lives in esc(); see shared.js). Documented in ARCHITECTURE.md.
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net ws: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'");
+    next();
+  });
   app.get("/api/health", (req, res) => res.json({ ok: true, src: poller.getSnapshot().src, t: poller.getSnapshot().t }));
   app.get("/favicon.ico", (req, res) => res.sendFile(path.join(__dirname, "..", "..", "public", "logo.svg")));
   app.get("/api/airports", (req, res) => {
@@ -211,7 +248,9 @@ function build() {
       return res.json({ t: s.t, src: s.src, count: s.tracks.length, tracks: s.tracks });
     }
     const s = domains.getSnapshot(d);
-    res.json({ t: s.t, src: s.src, count: s.movers.length, movers: s.movers });
+    const out = { t: s.t, src: s.src, count: s.movers.length, movers: s.movers };
+    if (s.earthHelio) out.earthHelio = s.earthHelio;
+    res.json(out);
   });
   app.get("/api/sea/vessels/:id", (req, res) => {
     const s = seaSnapshot();
@@ -235,11 +274,79 @@ function build() {
     res.json({ t: s.t, src: s.src, object: o });
   });
   app.get("/api/space/solar", (req, res) => {
-    const bodies = solar.getSolarBodies(new Date());
-    res.json({ t: Date.now(), src: "solar", count: bodies.length, bodies });
+    let at = new Date();
+    if (req.query.date != null) {
+      const ms = Date.parse(req.query.date);
+      if (!Number.isFinite(ms) || ms < Date.parse("1900-01-01") || ms > Date.parse("2100-01-01")) {
+        return res.status(400).json({ error: "date must be ISO 1900-2100" });
+      }
+      at = new Date(ms);
+    }
+    const bodies = solar.getSolarBodies(at);
+    res.json({ t: Date.now(), src: "solar", date: at.toISOString(), count: bodies.length, bodies, earthHelio: solar.earthHelio(at) });
   });
   app.get("/api/space/craft", (req, res) => {
     res.json({ t: Date.now(), src: "static", count: craft.CRAFT.length, craft: craft.CRAFT });
+  });
+  const layerDefs = [
+    { id: "flights", category: "Aviation", label: "Flights", description: "Live aircraft (ADS-B)", source: "OpenSky + adsb.lol", credit: "OpenSky + adsb.lol (ODbL)", cadenceMs: Number(process.env.POLL_MS || 30000), coverage: "best-effort global", onDefault: true, kind: "snapshot", get: () => { const s = tracks(); return { src: s.src, t: s.t, states: s.tracks }; } },
+    { id: "vessels", category: "Maritime", label: "Vessels", description: "Ship positions", source: "keyless AIS when configured", credit: "provider at AIS_URL", cadenceMs: Number(process.env.SEA_POLL_MS || 60000), coverage: "per feed", onDefault: false, kind: "snapshot", parked: !process.env.AIS_URL, parkedNote: "needs AIS_URL — showing sample positions", get: () => { const s = seaSnapshot(); return { src: s.src, t: s.t, states: s.movers }; } },
+    { id: "vehicles", category: "Ground transit", label: "Vehicles", description: "Transit vehicle positions", source: "city JSON feed when configured", credit: "agency at TRANSIT_URL", cadenceMs: Number(process.env.STREET_POLL_MS || 30000), coverage: "per city", onDefault: false, kind: "snapshot", parked: !process.env.TRANSIT_URL, parkedNote: "needs TRANSIT_URL — showing sample vehicles", get: () => { const s = streetsSnapshot(); return { src: s.src, t: s.t, states: s.movers }; } },
+    { id: "satellites", category: "Space", label: "Satellites", description: "TLE-propagated orbiters (predictions, not precise tracking)", source: "CelesTrak", credit: "CelesTrak (courtesy)", cadenceMs: 3600000, coverage: "catalogued objects", onDefault: false, kind: "snapshot", get: () => { const s = spaceSnapshot(); return { src: s.src, t: s.t, states: s.movers.filter((m) => m.kind === "satellite") }; } },
+    { id: "airports", category: "Infrastructure", label: "Airports", description: "Major hub reference points", source: "bundled OpenFlights subset", credit: "OpenFlights", coverage: "30 world hubs", onDefault: true, kind: "static" },
+    { id: "ports", category: "Infrastructure", label: "Ports", description: "Major world ports", source: "bundled reference set", coverage: "100+ ports", onDefault: false, kind: "static" },
+    { id: "stops", category: "Infrastructure", label: "Transit stops", description: "Worldwide rail/bus hubs", source: "bundled reference set", coverage: "70 hubs", onDefault: false, kind: "static" },
+    { id: "quakes", category: "Natural hazards", label: "Earthquakes", description: "USGS M4.5+ (preliminary vs reviewed marked)", source: "USGS FDSNWS", credit: "USGS (public domain)", cadenceMs: 300000, coverage: "global", onDefault: true, kind: "snapshot", get: () => { const s = quakePoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
+    { id: "events", category: "Natural hazards", label: "Natural events", description: "NASA EONET: fires, storms, volcanoes, floods", source: "NASA EONET", credit: "NASA (public domain)", cadenceMs: 1800000, coverage: "global", onDefault: false, kind: "snapshot", get: () => { const s = eventPoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
+    { id: "terminator", category: "Atmosphere", label: "Day/night line", description: "Terminator from the subsolar point", source: "computed from solar ephemeris", coverage: "global", onDefault: true, kind: "computed" },
+    { id: "weather", category: "Atmosphere", label: "Weather", description: "Point conditions + AQI on demand", source: "Open-Meteo", credit: "Open-Meteo (attribution)", cadenceMs: 600000, coverage: "global, point queries", onDefault: false, kind: "ondemand", last: () => lastWx, parkedNote: "query on demand" },
+    { id: "aurora", category: "Space weather", label: "Aurora (Kp)", description: "Planetary K-index readout", source: "NOAA SWPC", credit: "SWPC (public domain)", cadenceMs: 900000, coverage: "global index", onDefault: false, kind: "snapshot", get: () => { const s = swpcPoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
+    { id: "fireballs", category: "Space", label: "Fireballs", description: "Reported meteor events (CNEOS)", source: "NASA CNEOS", credit: "NASA/JPL (public domain)", cadenceMs: 3600000, coverage: "reported events", onDefault: false, kind: "snapshot", get: () => { const s = firePoller.getSnapshot(); return { src: s.src, t: s.t, states: s.states }; } },
+  ];
+  app.get("/api/layers", (req, res) => {
+    res.json({ t: Date.now(), layers: status.buildLayers(layerDefs) });
+  });
+  app.get("/api/hazards/quakes", (req, res) => {
+    const minMag = req.query.minMag == null ? 4.5 : Number(req.query.minMag);
+    const limit = req.query.limit == null ? 100 : Number(req.query.limit);
+    if (!Number.isFinite(minMag) || minMag < 0 || minMag > 10 || !Number.isFinite(limit) || limit < 1 || limit > 500) {
+      return res.status(400).json({ error: "minMag 0-10, limit 1-500" });
+    }
+    const s = quakePoller.getSnapshot();
+    const rows = (s.states || []).filter((q) => (q.mag ?? 0) >= minMag).slice(0, limit);
+    res.json({ t: s.t || Date.now(), src: s.src === "none" ? "unavailable" : s.src, count: rows.length, quakes: rows });
+  });
+  app.get("/api/hazards/events", (req, res) => {
+    const s = eventPoller.getSnapshot();
+    res.json({ t: s.t || Date.now(), src: s.src === "none" ? "unavailable" : s.src, count: (s.states || []).length, events: s.states || [] });
+  });
+  app.get("/api/weather", async (req, res) => {
+    let p;
+    try { p = wx.validatePoint(req.query.lat, req.query.lon); }
+    catch (e) { return res.status(e.status || 400).json({ error: "lat -90..90, lon -180..180 required" }); }
+    const units = req.query.units === "imperial" ? "imperial" : "metric";
+    try {
+      const data = await wx.fetchWx({ fetchJson, lat: p.lat, lon: p.lon, units });
+      lastWx = { t: Date.now() };
+      res.json({ t: Date.now(), ...data });
+    } catch (e) {
+      res.status(502).json({ error: "weather provider unreachable" });
+    }
+  });
+  app.get("/api/space/weather", (req, res) => {
+    const k = swpcPoller.getSnapshot();
+    const f = firePoller.getSnapshot();
+    res.json({
+      t: Date.now(),
+      kp: (k.states && k.states[0]) || null,
+      kpSrc: k.src === "none" ? "unavailable" : k.src,
+      fireballs: f.states || [],
+      fireballCount: (f.states || []).length,
+      fireballSrc: f.src === "none" ? "unavailable" : f.src,
+    });
+  });
+  app.get("/api/sea/ports", (req, res) => {
+    res.json({ t: Date.now(), src: "static", count: sea.ports.length, ports: sea.ports });
   });
   app.use(express.static(path.join(__dirname, "..", "..", "public")));
   return app;
@@ -263,7 +370,16 @@ function start(port = Number(process.env.PORT || 3000)) {
   seaPoller.start();
   streetsPoller.start();
   tleStore.start();
-  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, domains };
+  quakePoller.start();
+  eventPoller.start();
+  swpcPoller.start();
+  firePoller.start();
+  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, quakePoller, eventPoller, swpcPoller, firePoller, domains };
 }
-if (require.main === module) start();
+if (require.main === module) {
+  if (process.env.OPENSKY_USER && !process.env.OPENSKY_PASS) {
+    console.warn("OPENSKY_USER set without OPENSKY_PASS — anonymous quota applies");
+  }
+  start();
+}
 module.exports = { build, start, enrich, tracks, poller, isoFor };

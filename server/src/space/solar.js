@@ -107,27 +107,29 @@ function getSolarBodies(date = new Date()) {
   for (const k of Object.keys(ELEMENTS)) P[k] = helioAu(k, T);
   const earth = P.earth;
   const out = [];
-  const push = (id, label, g, distKm, extra) => {
+  const push = (id, label, g, distKm, helio, semiMajorAu, extra) => {
     const sp = subpoint(g[0], g[1], g[2], gmst);
     out.push({
       id, domain: "space", kind: "solar", lat: sp.lat, lon: sp.lon,
       altM: null, velKmh: null, hdg: null, label,
+      helio: helio.map((v) => +v.toFixed(6)), semiMajorAu: semiMajorAu ?? null,
       meta: { body: label, distKm: Math.round(distKm), distAu: +(sp.distAu).toFixed(4), ...(extra || {}) },
       src: "solar",
     });
   };
   const re = Math.hypot(...earth);
-  push("solar-sun", "Sun", [-earth[0], -earth[1], -earth[2]], re * AU_KM);
+  push("solar-sun", "Sun", [-earth[0], -earth[1], -earth[2]], re * AU_KM, [0, 0, 0], 0);
   const moon = moonGeo(date);
   const rm = Math.hypot(moon.x, moon.y, moon.z);
-  push("solar-moon", "Moon", [moon.x, moon.y, moon.z], rm * AU_KM, {
-    illum: +((1 - Math.cos(moon.elongDeg * D2R)) / 2).toFixed(3),
-  });
+  push("solar-moon", "Moon", [moon.x, moon.y, moon.z], rm * AU_KM,
+    [earth[0] + moon.x, earth[1] + moon.y, earth[2] + moon.z], null, {
+      illum: +((1 - Math.cos(moon.elongDeg * D2R)) / 2).toFixed(3),
+    });
   for (const name of ["mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]) {
     const p = P[name];
     const g = [p[0] - earth[0], p[1] - earth[1], p[2] - earth[2]];
     const label = name[0].toUpperCase() + name.slice(1);
-    push(`solar-${name}`, label, g, Math.hypot(...g) * AU_KM);
+    push(`solar-${name}`, label, g, Math.hypot(...g) * AU_KM, p, ELEMENTS[name][0]);
   }
   const dDays = julian(date) - 2451545.0;
   for (const mn of MOONS) {
@@ -135,12 +137,17 @@ function getSolarBodies(date = new Date()) {
     const rAu = mn.aKm / AU_KM;
     const ci = Math.cos(mn.inclDeg * D2R), si = Math.sin(mn.inclDeg * D2R);
     const pp = P[mn.parent];
-    const g = [pp[0] - earth[0] + rAu * Math.cos(ph), pp[1] - earth[1] + rAu * Math.sin(ph) * ci, pp[2] - earth[2] + rAu * Math.sin(ph) * si];
+    const helio = [pp[0] + rAu * Math.cos(ph), pp[1] + rAu * Math.sin(ph) * ci, pp[2] + rAu * Math.sin(ph) * si];
+    const g = [helio[0] - earth[0], helio[1] - earth[1], helio[2] - earth[2]];
     const parentLabel = mn.parent[0].toUpperCase() + mn.parent.slice(1);
-    push(`solar-${mn.id}`, mn.label, g, Math.hypot(...g) * AU_KM, {
+    push(`solar-${mn.id}`, mn.label, g, Math.hypot(...g) * AU_KM, helio, null, {
       body: mn.label, parent: parentLabel, orbitKm: mn.aKm, periodD: mn.periodD, approx: true,
     });
   }
   return out;
 }
-module.exports = { getSolarBodies, gmstDeg, julian, AU_KM };
+function earthHelio(date = new Date()) {
+  const T = (julian(date) - 2451545.0) / 36525;
+  return helioAu("earth", T).map((v) => +v.toFixed(6));
+}
+module.exports = { getSolarBodies, earthHelio, gmstDeg, julian, AU_KM };

@@ -27,7 +27,7 @@ One Node poller per domain fetches live snapshots through `TrackingSource` Adapt
 | Broadcast Module | `ws` viewport subscribe + diff push, backpressure | Fusion cache → browsers |
 | TrackingSource Module (planned) | `getSnapshot(domain, bbox?) -> movers[]`; one seam, Adapters per domain | Adapters → Fusion/UI |
 | Space Module (planned) | TLE fetch/cache + propagation + solar scene + satellite dossier | CelesTrak → globe/UI |
-| Frontend (`public/`) | Cesium globe w/ automatic Leaflet 2D fallback, dossier, search, ticker | Broadcast + detail API only (never feeds directly) |
+| Frontend (`public/`) | Cesium globe + heliocentric solar scene, dossier, search, ticker, layer panel | Broadcast + detail API only (never feeds directly) |
 | Collector (later) | Daily quote sampling → real fare avgs | Pricing DB → Pricing Module |
 
 ## Data stores

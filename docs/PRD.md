@@ -12,7 +12,7 @@ Live map + detail panel served from one free backend + one free frontend host. D
 1. Capacity shown (aircraft seats + typical-load band), never fake live boarded count.
 2. Best-effort global free coverage (not guaranteed every flight).
 3. Avg fare per class via modeled estimator day-1 (no booking links in MVP).
-4. Stack: Node + Express + `ws` backend; Cesium 3D globe + Google satellite frontend (Leaflet 2D fallback shares the dossier).
+4. Stack: Node + Express + `ws` backend; Cesium 3D globe + Google satellite frontend (WebGL required; guided diagnostics when unavailable).
 5. Multimodal (adopted 2026-09-27, see `multimodal-space-plan.md`): one `TrackingSource` seam, Adapters per domain. Space + solar ship keyless; ships via keyless AIS, trains via keyless NTES clients, metro/bus per open city; key-gated sources stay parked until the user pastes keys (agent never creates accounts).
 
 | ID | As a... | I want to... | So that... | Status |

@@ -82,9 +82,8 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | Piece | Notes |
 |-------|-------|
 | `index.html` | globe container, search rail, dossier, ticker; IDs in `tests/unit/landingStatic.test.js` U-STATIC-03 |
-| `app.js` | Cesium viewer (Esri/OSM/hybrid), canvas airline badges, flagcdn flags, `/api/snapshot` + ws reconcile, demo fallback |
-| `app2d.js` | Leaflet 2D fallback (Esri satellite), same dossier via shared.js, auto-loaded when WebGL/Cesium unavailable |
-| `shared.js` | dossier/search/ticker + DEMO + airline/flag/fare helpers shared by 3D and 2D |
+| `app.js` | Cesium viewer + heliocentric solar scene, canvas badges, flagcdn flags, `/api` + ws reconcile, layer overlays, terminator, solar animation |
+| `shared.js` | dossier/search/ticker + DEMO + airline/flag/fare helpers shared across modes |
 | `styles.css` | Space Grotesk + IBM Plex Mono; tokens `--space/--cyan/--amber` |
 
 ## Known limitations

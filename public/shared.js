@@ -14,6 +14,33 @@ const DEMO = [
   { hex: "112233", callsign: "SIA21", lat: 35.0, lon: 135.0, velKmh: 920, hdg: 90, altM: 12100, origin: "SIN", dest: "NRT", type: "A359", cap: 253, fares: { eco: 340, prem: 560, biz: 1050, first: 1720 }, servicesList: ["Wi-Fi", "Meals", "2 bags", "IFE"], src: "demo", near: { iata: "NRT", city: "Tokyo", distKm: 700 } },
 ];
 function flag(iso) { return iso ? `https://flagcdn.com/w40/${iso}.png` : null; }
+// Escape feed-derived strings before innerHTML: callsigns/labels arrive over
+// radio and public feeds, so treat them as untrusted (stored-XSS surface).
+function esc(v) {
+  return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function announce(msg) {
+  const el = document.getElementById("srStatus");
+  if (el) el.textContent = msg;
+}
+// Original educational one-liners (plain facts, no copied text).
+const PLANET_INFO = {
+  Sun: "Star at the system's center; its apparent position drives day and night.",
+  Moon: "Earth's only natural satellite; its phase comes from Sun–Earth geometry.",
+  Mercury: "Smallest planet, closest to the Sun, with extreme day–night swings.",
+  Venus: "Cloud-wrapped world with a runaway greenhouse effect; brightest planet.",
+  Mars: "Dusty red planet hosting rovers, orbiters, and our next-visit plans.",
+  Jupiter: "Largest planet; its gravity shepherds asteroids and hosts big moons.",
+  Saturn: "Ringed gas giant; Titan and Enceladus are ocean-world candidates.",
+  Uranus: "Ice giant tipped on its side, rolling around the Sun.",
+  Neptune: "Windiest world, found by mathematics before telescopes saw it.",
+  Pluto: "Dwarf planet of the Kuiper belt, visited by New Horizons in 2015.",
+  Io: "Most volcanic body known, squeezed by Jupiter's tides.",
+  Europa: "Icy moon with a likely subsurface ocean; prime life-search target.",
+  Ganymede: "Largest moon in the system, bigger than Mercury.",
+  Callisto: "Ancient cratered moon, a record of 4 billion years of impacts.",
+  Titan: "Saturn's moon with lakes of liquid methane under orange haze.",
+};
 // Domains: one UI, four TrackingSource adapters (see docs/LLD.md). All data
 // comes from same-origin /api + ws; the frontend never calls feeds directly.
 const DOMAINS = {
@@ -44,7 +71,7 @@ function setMode(mode, src) {
   document.getElementById("modeBadge").textContent = mode === "live" ? `live · ${src}` : mode;
   document.getElementById("liveDot").classList.toggle("on", mode === "live");
 }
-const DOMAIN_PICK = { sky: "flight", sea: "vessel", streets: "vehicle", space: "object" };
+const DOMAIN_PICK = { sky: "flight", sea: "vessel", streets: "vehicle", space: "body" };
 function resetDossier(domain) {
   const dom = (domain && DOMAINS[domain]) ? domain : "sky";
   document.getElementById("pTitle").textContent = `Pick a ${DOMAIN_PICK[dom]}`;
@@ -111,9 +138,9 @@ function updateTicker(list, domain) {
 }
 function renderDomainDossier(f, dom) {
   const m = f.meta || {};
-  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body", craft: "Spacecraft" }[f.kind] || "Mover";
+  const kindName = { vessel: "Vessel", vehicle: "Transit vehicle", satellite: "Satellite", solar: "Solar body", craft: "Spacecraft", quake: "Earthquake", event: "Natural event", fireball: "Fireball" }[f.kind] || "Mover";
   document.getElementById("pTitle").textContent = moverLabel(f);
-  document.getElementById("pSub").textContent = `${kindName} · ${DOMAINS[dom].label} · ID ${moverId(f)}`;
+  document.getElementById("pSub").textContent = `${kindName} · ${DOMAINS[dom] ? DOMAINS[dom].label : dom} · ID ${moverId(f)}`;
   document.getElementById("pFlag").hidden = true;
   const alt = f.kind === "satellite" && f.altM != null ? `${Math.round(f.altM / 1000).toLocaleString()} km`
     : f.kind === "solar" ? "–"
@@ -123,19 +150,27 @@ function renderDomainDossier(f, dom) {
   document.getElementById("pHdg").textContent = f.hdg != null ? `${Math.round(f.hdg)}°` : "–";
   document.getElementById("pVs").textContent = m.draughtM != null ? `${m.draughtM} m draught`
     : f.kind === "satellite" && m.periodMin != null ? `${m.periodMin} min period · ${m.inclDeg}° incl`
+    : f.kind === "quake" && m.depthKm != null ? `${m.depthKm} km deep`
     : (m.status || m.noradId || "–");
   const near = f.near ? `${f.near.iata || ""}${f.near.city ? ` · ${f.near.city}` : ""} · ${Number(f.near.distKm || 0).toLocaleString()} km` : "–";
   document.getElementById("pNear").textContent = near;
   const cap = f.kind === "solar" && m.distKm != null ? `${m.distKm.toLocaleString()} km${m.distAu != null ? ` · ${m.distAu} AU` : ""}${m.illum != null ? ` · ${(m.illum * 100).toFixed(1)}% lit` : ""}${m.parent ? ` · orbits ${m.parent}` : ""}${m.periodD != null ? ` · ${m.periodD}d period` : ""}`
     : f.kind === "satellite" ? [m.noradId && `NORAD ${m.noradId}`, m.class && `class ${m.class}`, m.launchYear && `launched ${m.launchYear}`, m.apogeeKm != null && m.perigeeKm != null ? `${m.perigeeKm.toLocaleString()}–${m.apogeeKm.toLocaleString()} km` : null].filter(Boolean).join(" · ") || "–"
     : f.kind === "craft" ? [m.agency, m.mission, m.target && `@ ${m.target}`, m.launchYear && `launched ${m.launchYear}`, m.status].filter(Boolean).join(" · ") || "–"
+    : f.kind === "quake" ? [`M${m.mag}`, m.place, m.status].filter(Boolean).join(" · ") || "–"
+    : f.kind === "event" ? [(m.categories || []).join(", "), m.closed ? "closed" : "open"].filter(Boolean).join(" · ") || "–"
+    : f.kind === "fireball" ? [m.dateUtc, m.energyKt != null && `${m.energyKt} kt`, m.velKms != null && `${m.velKms} km/s`].filter(Boolean).join(" · ") || "–"
     : [m.type, m.flag && `flag ${m.flag}`, m.route, m.dest && `→ ${m.dest}`, m.next && `next ${m.next}`].filter(Boolean).join(" · ") || "–";
   document.getElementById("pCap").textContent = cap;
-  document.getElementById("pRoute").textContent = m.route ? `${m.route}${m.next ? ` → ${m.next}` : ""}${m.status ? ` · ${m.status}` : ""}`
+  document.getElementById("pRoute").textContent = f.kind === "solar" ? (PLANET_INFO[m.body] || PLANET_INFO[f.label] || "Position-only track")
+    : m.route ? `${m.route}${m.next ? ` → ${m.next}` : ""}${m.status ? ` · ${m.status}` : ""}`
     : m.dest ? `→ ${m.dest}` : (m.target ? `@ ${m.target}${m.status ? ` · ${m.status}` : ""} · vicinity marker` : "Position-only track");
-  document.getElementById("pServices").innerHTML = [m.type, m.flag, m.status, m.body].filter(Boolean).map((s) => `<li>${s}</li>`).join("") || "<li>–</li>";
+  document.getElementById("pServices").innerHTML = [m.type, m.flag, m.status, m.body].filter(Boolean).map((s) => `<li>${esc(s)}</li>`).join("") || "<li>–</li>";
   document.getElementById("pFares").innerHTML = "<tr><td>fares</td><td>sky only</td></tr>";
-  document.getElementById("pFine").textContent = dom === "space" && f.kind === "solar"
+  document.getElementById("pFine").textContent = f.kind === "quake" ? "USGS data: preliminary reports can revise. Informational only — not an emergency alert."
+    : f.kind === "event" ? "NASA EONET open events. Check official sources for emergencies."
+    : f.kind === "fireball" ? "Reported CNEOS events; times and places are approximate."
+    : dom === "space" && f.kind === "solar"
     ? "Solar subpoint: where the body stands at zenith, from math-only ephemeris."
     : dom === "space" ? "Satellite propagated from CelesTrak TLE (courtesy). Demo elements when offline."
     : dom === "sea" ? "Vessel positions keyless-AIS when configured, demo otherwise. Never navigation-grade."

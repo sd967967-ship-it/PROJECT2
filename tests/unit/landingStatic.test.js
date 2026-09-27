@@ -13,8 +13,6 @@ test("U-STATIC-01 three imagery layers (sat/hybrid/street)", () => {
   assert.match(app, /openstreetmap/);
   assert.match(html, /data-lyr="sat"/);
   assert.match(html, /data-lyr="esri"/);
-  const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
-  assert.match(two, /markerClusterGroup/);
 });
 test("U-STATIC-02 free 3D globe, render-on-demand", () => {
   assert.match(app, /new Cesium\.Viewer/);
@@ -37,22 +35,21 @@ test("U-STATIC-05 no tracked secrets in public/", () => {
   assert.doesNotMatch(app, /api[_-]?key\s*[:=]\s*['"][A-Za-z0-9]{8,}/i);
   assert.doesNotMatch(app, /password\s*[:=]\s*['"][^'"]{3,}/i);
 });
-test("U-STATIC-06 loader has fallback CDN and diagnostic box", () => {
+test("U-STATIC-06 loader tries every WebGL path with guided diagnostics", () => {
   assert.match(html, /cdn\.jsdelivr\.net\/npm\/cesium/);
   assert.ok(html.includes('id="noglMsg"'));
-  assert.match(html, /webgl2/);
+  assert.match(html, /webglInfo/);
+  assert.match(html, /__softwareGL/);
+  assert.match(html, /enable-unsafe-swiftshader/);
+  assert.match(app, /failIfMajorPerformanceCaveat/);
+  assert.match(app, /__softwareGL/);
 });
-test("U-STATIC-07 automatic 2D fallback path", () => {
+test("U-STATIC-07 3D globe only, no 2D fallback", () => {
   assert.match(html, /shared\.js/);
-  assert.match(html, /app2d\.js/);
-  assert.match(html, /leaflet/);
-  assert.ok(html.includes('id="map2d"'));
-  const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
-  assert.match(two, /World_Imagery/);
-  assert.match(two, /renderDossier/);
-  assert.match(two, /markerClusterGroup/);
-  assert.match(two, /plane-icon/);
-  assert.match(two, /rotate\(/);
+  assert.doesNotMatch(html, /app2d\.js/);
+  assert.doesNotMatch(html, /leaflet/i);
+  assert.ok(!html.includes('id="map2d"'));
+  assert.ok(!fs.existsSync(path.join(__dirname, "..", "..", "public", "app2d.js")));
   const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
   assert.match(shared, /renderDossier/);
   assert.match(shared, /updateTicker/);
@@ -63,25 +60,21 @@ test("U-STATIC-08 small yellow plane markers (numbers only for dense clusters)",
   assert.match(app, /#ffd23f/);
   assert.match(app, /CLUSTER_AT/);
   assert.match(app, /clusterBadge/); // clusters keep counts; singles are yellow planes
-  const planes2d = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
-  assert.match(planes2d, /#ffd23f/);
-  assert.match(planes2d, /disableClusteringAtZoom/);
 });
 test("U-STATIC-10 four tracking modes over backend only", () => {
-  const two = fs.readFileSync(path.join(__dirname, "..", "..", "public", "app2d.js"), "utf8");
   const shared = fs.readFileSync(path.join(__dirname, "..", "..", "public", "shared.js"), "utf8");
   for (const d of ["sky", "sea", "streets", "space"]) assert.ok(html.includes(`data-domain="${d}"`), `missing mode ${d}`);
   assert.match(html, /aria-label="Tracking mode"/);
   for (const u of ["/api/sea/vessels/", "/api/streets/vehicles/", "/api/space/objects/"]) assert.ok(shared.includes(u), `missing ${u}`);
-  assert.ok(app.includes('"craft"') || two.includes('"craft"'), "missing craft markers");
-  assert.ok(app.includes("/api/${state.domain}/snapshot") || two.includes("/api/${state2d.domain}/snapshot"), "missing domain snapshot hook");
-  assert.ok(app.includes('domain: state.domain') || two.includes('domain: state2d.domain'), "missing domain ws sub");
+  assert.ok(app.includes('"craft"'), "missing craft markers");
+  assert.ok(app.includes("/api/${state.domain}/snapshot"), "missing domain snapshot hook");
+  assert.ok(app.includes('domain: state.domain'), "missing domain ws sub");
   assert.match(shared, /DOMAINS/);
   assert.match(shared, /Spacecraft/);
   assert.ok(html.includes('id="tour"'), "missing solar tour button");
-  assert.ok(app.includes("solarTour") && two.includes("solarTour2d"), "missing tour logic");
+  assert.ok(app.includes("solarTour"), "missing tour logic");
   assert.match(shared, /renderDomainDossier/);
-  for (const src of [app, two, shared, html]) {
+  for (const src of [app, shared, html]) {
     assert.doesNotMatch(src, /celestrak\.org/i);
     assert.doesNotMatch(src, /aiscast\.|aisstream\./i);
     assert.doesNotMatch(src, /gtfs-realtime|gtfsrt/i);

@@ -88,6 +88,7 @@ function propagateToMovers(sets, now, sat, src) {
         id: `sat-${s.noradId}`, domain: "space", kind: "satellite",
         lat, lon, altM: Math.round(geo.height * 1000),
         velKmh, hdg: null, label: s.name,
+        eciKm: { x: +pv.position.x.toFixed(1), y: +pv.position.y.toFixed(1), z: +pv.position.z.toFixed(1) },
         meta: { noradId: s.noradId, ...tleDetails(s.l1, s.l2) },
         src: src || "tle",
       });

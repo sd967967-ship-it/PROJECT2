@@ -92,3 +92,28 @@ test("E-SPACE-02 solar tour visits bodies with dossier", async ({ page }) => {
   await expect(page.locator("#pTitle")).not.toHaveText("Pick a flight", { timeout: 15000 });
   await page.screenshot({ path: "tests/reports/e2e-tour.png" });
 });
+
+test("E-SPACE-03 heliocentric scene activates with Sun and planets", async ({ page }) => {
+  await expect(page.locator("#globe canvas")).toBeVisible({ timeout: 60000 });
+  await modeBtn(page, "Space").click();
+  await page.waitForFunction(() => window.__viewer && window.__viewer.scene.globe.show === false, null, { timeout: 60000 });
+  const scene = await page.evaluate(() => {
+    const ids = window.__viewer.entities.values.map((e) => e.id);
+    return {
+      sun: ids.includes("sol-solar-sun"),
+      planets: ["sol-solar-mercury", "sol-solar-venus", "sol-solar-mars", "sol-solar-jupiter", "sol-solar-saturn", "sol-solar-uranus", "sol-solar-neptune"].filter((id) => ids.includes(id)).length,
+      rings: ids.filter((id) => String(id).startsWith("sol-ring-")).length,
+    };
+  });
+  expect(scene.sun).toBeTruthy();
+  expect(scene.planets).toBe(7);
+  expect(scene.rings).toBeGreaterThanOrEqual(7);
+  const hidden = await page.evaluate(() => {
+    const gl = window.__viewer.entities.values.filter((e) => e.track && !String(e.id).startsWith("sol-"));
+    return { globe: gl.length, hidden: gl.filter((e) => e.show === false).length, atmo: window.__viewer.scene.skyAtmosphere.show };
+  });
+  expect(hidden.globe).toBeGreaterThan(0);
+  expect(hidden.hidden).toBe(hidden.globe);
+  expect(hidden.atmo).toBe(false);
+  await page.screenshot({ path: "tests/reports/e2e-solar.png" });
+});

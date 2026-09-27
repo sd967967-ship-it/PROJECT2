@@ -28,6 +28,8 @@ test("tle propagates to plausible LEO movers", () => {
   assert.ok(Math.abs(iss.meta.periodMin - 93.0) < 0.6, `period ${iss.meta.periodMin}`);
   assert.equal(iss.meta.launchYear, 1998);
   assert.ok(iss.meta.perigeeKm > 350 && iss.meta.apogeeKm < 500, `apsides ${iss.meta.perigeeKm}/${iss.meta.apogeeKm}`);
+  const eciR = Math.hypot(iss.eciKm.x, iss.eciKm.y, iss.eciKm.z);
+  assert.ok(eciR > 6000 && eciR < 50000, `eci radius ${eciR}`);
   for (const s of m) {
     assert.ok(Math.abs(s.lat) <= 90 && Math.abs(s.lon) <= 180);
     assert.ok(s.altM > 100000 && s.altM < 2000000, `alt ${s.altM}`);
@@ -49,10 +51,19 @@ test("tle store serves demo at boot, goes live on refresh", async () => {
 test("solar subpoints are sane", () => {
   const bodies = getSolarBodies(new Date("2026-09-27T12:00:00Z"));
   assert.ok(bodies.length >= 15);
+  const { earthHelio } = require("../src/space/solar");
+  const eh = earthHelio(new Date("2026-09-27T12:00:00Z"));
+  const er = Math.hypot(...eh);
+  assert.ok(er > 0.98 && er < 1.02, `earth helio ${er}`);
   const sun = bodies.find((b) => b.id === "solar-sun");
   assert.ok(Math.abs(sun.lat) <= 23.6, `subsolar lat ${sun.lat}`);
   assert.ok(Math.abs(sun.lon) <= 180);
   assert.ok(sun.meta.distKm > 146e6 && sun.meta.distKm < 152e6);
+  assert.ok(Math.hypot(...sun.helio) < 1e-6, "sun at heliocentric origin");
+  const mars = bodies.find((b) => b.id === "solar-mars");
+  const marsR = Math.hypot(...mars.helio);
+  assert.ok(marsR > 1.3 && marsR < 1.7, `mars helio ${marsR}`);
+  assert.equal(mars.semiMajorAu, 1.52371034);
   const moon = bodies.find((b) => b.id === "solar-moon");
   assert.ok(moon.meta.distKm > 350000 && moon.meta.distKm < 410000, `moon ${moon.meta.distKm}`);
   assert.ok(moon.meta.illum >= 0 && moon.meta.illum <= 1);

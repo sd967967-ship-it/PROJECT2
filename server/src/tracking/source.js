@@ -37,7 +37,9 @@ function createRegistry(sources) {
       assertDomain(domain);
       const s = sources[domain].getSnapshot();
       const movers = (s.movers || []).filter((m) => inBbox(m, bbox));
-      return { t: s.t || Date.now(), src: s.src || "none", movers };
+      const out = { t: s.t || Date.now(), src: s.src || "none", movers };
+      if (s.earthHelio) out.earthHelio = s.earthHelio; // space scene input
+      return out;
     },
   };
 }

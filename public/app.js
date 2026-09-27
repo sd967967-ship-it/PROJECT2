@@ -1,5 +1,5 @@
 // SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
-const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", domain: "sky", ws: null, all: [], imagery: {}, airports: [], selectedHex: null, followHex: null, trails: new Map() };
+const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", domain: "sky", ws: null, all: [], imagery: {}, airports: [], solar: { active: false, entities: new Map(), earthHelio: null }, selectedHex: null, followHex: null, trails: new Map() };
 function pushTrail(f) {
   if (!f || f.hex == null) return;
   let t = state.trails.get(f.hex);
@@ -92,6 +92,7 @@ function sendSub() {
 }
 function setDomain(d) {
   if (!DOMAINS[d] || d === state.domain) return;
+  if (state.domain === "space") exitSolarSystem();
   state.domain = d;
   document.querySelectorAll(".modes button").forEach((b) => {
     const on = b.dataset.domain === d;
@@ -110,6 +111,132 @@ function setDomain(d) {
 }
 function wireModes() {
   document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => setDomain(b.dataset.domain)));
+}
+// Solar-system scene (Space mode): heliocentric view on the main page. The Sun
+// sits at the origin, planets/moons ride scaled true positions, orbit guides
+// mark the paths, and the live TLE belt wraps an Earth marker. Positions are
+// true; sizes exaggerated and labeled. One viewer, no new libraries.
+const AU_SCENE = 1e6; // scene meters per AU (Neptune ~3e7 m: proven render range)
+const SAT_EX = 40; // TLE cloud exaggerated around the Earth marker, labeled
+const PLANET_STYLE = {
+  sun: ["#ffb454", 64], moon: ["#cfd6e4", 24], mercury: ["#9c8e82", 20], venus: ["#e8c47a", 26],
+  earth: ["#57a6ff", 28], mars: ["#e07a4f", 24], jupiter: ["#d8b48f", 40], saturn: ["#e3cf9e", 38],
+  uranus: ["#9fe3e8", 30], neptune: ["#5f7ff2", 30], pluto: ["#c9b8a8", 18],
+};
+function helioScene(h) { return new Cesium.Cartesian3(h[0] * AU_SCENE, h[2] * AU_SCENE, -h[1] * AU_SCENE); }
+function discBillboard(color, glow) {
+  const c = document.createElement("canvas"); c.width = c.height = 72;
+  const g = c.getContext("2d");
+  g.fillStyle = color;
+  g.beginPath(); g.arc(36, 36, glow ? 20 : 15, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = "#0b2036"; g.lineWidth = 3; g.stroke();
+  if (glow) { g.strokeStyle = color; g.lineWidth = 2; g.beginPath(); g.arc(36, 36, 28, 0, Math.PI * 2); g.stroke(); }
+  return c.toDataURL();
+}
+function solarAdd(id, pos, img, px, track, labelText, labelFar) {
+  const v = state.viewer;
+  let e = state.solar.entities.get(id);
+  if (!e) {
+    const parts = { id, position: pos, billboard: { image: img, width: px, height: px } };
+    if (labelText) parts.label = { text: labelText, font: "13px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -30), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, labelFar || 5e8) };
+    e = v.entities.add(parts);
+    state.solar.entities.set(id, e);
+  } else e.position = pos;
+  e.track = track || null; e._scenePos = pos;
+  return e;
+}
+function bodyStyle(f) {
+  if (f.kind === "craft") return ["#ffd23f", 20];
+  if (f.kind === "satellite") return ["#c9a7ff", 12];
+  const key = String((f.meta && f.meta.body) || f.label || "").toLowerCase();
+  if (key === "sun") return PLANET_STYLE.sun;
+  if (PLANET_STYLE[key]) return PLANET_STYLE[key];
+  if (f.meta && f.meta.parent) return ["#d7def0", 16]; // major moons
+  return ["#c9a7ff", 20];
+}
+function enterSolarSystem() {
+  const v = state.viewer;
+  exitSolarSystem(false);
+  v.scene.globe.show = false;
+  v.scene.skyAtmosphere.show = false; // atmosphere renders a white disc with no globe behind it
+  for (const [, e] of state.entities) e.show = false; // globe markers stay out of the scene
+  if (state.trailEnt) state.trailEnt.show = false;
+  if (state.routeEnt) state.routeEnt.show = false;
+  v.trackedEntity = undefined;
+  state.solar.active = true;
+  updateSolarSystem(state.all);
+  try { v.camera.flyTo({ destination: new Cesium.Cartesian3(0, 2.2e7, 3.2e7), duration: 2.0 }); } catch { /* globe not ready */ }
+  v.scene.requestRender();
+}
+function exitSolarSystem(restoreView = true) {
+  const v = state.viewer;
+  if (!v) return;
+  for (const [, e] of state.solar.entities) v.entities.remove(e);
+  state.solar.entities.clear();
+  state.solar.active = false;
+  v.scene.globe.show = true;
+  v.scene.skyAtmosphere.show = true;
+  for (const [, e] of state.entities) e.show = true;
+  if (state.trailEnt) state.trailEnt.show = true;
+  if (state.routeEnt) state.routeEnt.show = true;
+  if (restoreView) { try { v.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(60, 25, 16000000), duration: 1.6 }); } catch { /* globe not ready */ } }
+}
+function updateSolarSystem(list) {
+  const v = state.viewer, seen = new Set();
+  const eh = state.solar.earthHelio;
+  if (!eh || !state.solar.active) return;
+  const earthPos = helioScene(eh);
+  const byId = {};
+  const parentHelio = {};
+  for (const b of list) {
+    if (b.kind === "solar" && b.helio && !(b.meta && b.meta.parent) && b.meta && b.meta.body) {
+      parentHelio[b.meta.body.toLowerCase()] = b.helio;
+    }
+  }
+  for (const b of list) {
+    if (b.kind !== "solar" || !b.helio) continue;
+    const [color, px] = bodyStyle(b);
+    // Moon labels only join at closer range so the inner-system pile stays readable.
+    const far = b.meta && b.meta.parent ? 8e6 : 5e8;
+    // Major moons ride exaggerated parent-relative offsets: true offsets sit
+    // inside the planet marker even on tour, so ×30 keeps them findable.
+    let hel = b.helio;
+    const ph = b.meta && b.meta.parent && parentHelio[b.meta.parent.toLowerCase()];
+    if (ph) hel = [ph[0] + (hel[0] - ph[0]) * 30, ph[1] + (hel[1] - ph[1]) * 30, ph[2] + (hel[2] - ph[2]) * 30];
+    const pos = helioScene(hel);
+    byId[b.id] = pos;
+    solarAdd(`sol-${b.id}`, pos, discBillboard(color, b.id === "solar-sun"), px, b, b.label, far);
+    seen.add(`sol-${b.id}`);
+    if (b.semiMajorAu) {
+      const pts = [];
+      for (let i = 0; i <= 72; i++) { const a = (i / 72) * Math.PI * 2; pts.push(helioScene([Math.cos(a) * b.semiMajorAu, Math.sin(a) * b.semiMajorAu, 0])); }
+      const rid = `sol-ring-${b.id}`;
+      seen.add(rid);
+      if (!state.solar.entities.get(rid)) state.solar.entities.set(rid, v.entities.add({ id: rid, polyline: { positions: pts, width: 1, material: Cesium.Color.fromCssColorString("#3a5aa8").withAlpha(0.55) } }));
+    }
+  }
+  solarAdd("sol-earth", earthPos, discBillboard("#57a6ff", false), 28, null, "Earth");
+  seen.add("sol-earth");
+  const kk = 1000 * (AU_SCENE / 149597870.7) * SAT_EX;
+  for (const f of list) {
+    if (f.kind !== "satellite" || !f.eciKm) continue;
+    const id = `sol-${f.id}`;
+    const pos = new Cesium.Cartesian3(earthPos.x + f.eciKm.x * kk, earthPos.y + f.eciKm.z * kk, earthPos.z - f.eciKm.y * kk);
+    solarAdd(id, pos, discBillboard("#c9a7ff", false), 12, f, null);
+    seen.add(id);
+  }
+  let ci = 0;
+  for (const f of list) {
+    if (f.kind !== "craft") continue;
+    const ap = f.meta && f.meta.anchor && byId[f.meta.anchor];
+    if (!ap) continue;
+    const ang = (ci++) * 2.4;
+    const pos = new Cesium.Cartesian3(ap.x + Math.cos(ang) * 60000, ap.y + Math.sin(ang) * 60000, ap.z);
+    solarAdd(`sol-${f.id}`, pos, discBillboard("#ffd23f", false), 18, f, f.label, 3e6);
+    seen.add(`sol-${f.id}`);
+  }
+  for (const [id, e] of state.solar.entities) if (!seen.has(id)) { v.entities.remove(e); state.solar.entities.delete(id); }
+  v.scene.requestRender();
 }
 function initViewer() {
   const esri = new Cesium.UrlTemplateImageryProvider({
@@ -139,6 +266,9 @@ function initViewer() {
     baseLayerPicker: false, geocoder: false, homeButton: true,
     timeline: false, animation: false, fullscreenButton: false,
     requestRenderMode: true,
+    // Never refuse a context ourselves: lets CPU (SwiftShader/llvmpipe)
+    // rendering through wherever the browser permits it.
+    contextOptions: { webgl: { failIfMajorPerformanceCaveat: false, powerPreference: "default" } },
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });
   state.imagery = { sat: [googleSat], hybrid: [googleHyb], street: [osm], esri: [esri, labels] };
@@ -179,7 +309,7 @@ function ensureSingle(v, f, pos) {
   let e = state.entities.get(id);
   if (!e) {
     e = v.entities.add({
-      id, position: pos,
+      id, position: pos, show: !state.solar.active,
       billboard: { image: iconFor(f), width: px, height: px, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.3, 2e7, 0.45), alignedAxis: Cesium.Cartesian3.ZERO },
       label: { text: moverLabel(f), font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -32), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, labelFar) },
     });
@@ -247,7 +377,7 @@ function upsert(list) {
       const pos = Cesium.Cartesian3.fromDegrees(lon, lat, 1200000);
       if (!e) {
         e = v.entities.add({
-          id, position: pos,
+          id, position: pos, show: !state.solar.active,
           billboard: { image: clusterBadge(g.length), width: 44, height: 44, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.5, 2e7, 0.6) },
         });
         state.entities.set(id, e);
@@ -260,6 +390,10 @@ function upsert(list) {
   for (const f of list.slice(0, 1200)) pushTrail(f);
   state.all = list;
   updateTicker(list, state.domain);
+  if (state.domain === "space" && state.solar.earthHelio) {
+    if (!state.solar.active) enterSolarSystem();
+    else updateSolarSystem(list);
+  }
   drawSelectedTrail();
   v.scene.render();
 }
@@ -279,12 +413,21 @@ function solarTour() {
   state.tourIdx = ((state.tourIdx == null ? -1 : state.tourIdx) + 1) % bodies.length;
   const f = bodies[state.tourIdx];
   show(moverId(f));
-  try { state.viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, 8000000), duration: 1.6 }); } catch { /* globe not ready */ }
+  if (!state.solar.active) {
+    try { state.viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, 8000000), duration: 1.6 }); } catch { /* globe not ready */ }
+    return;
+  }
+  try {
+    const e = state.solar.entities.get(`sol-${moverId(f)}`);
+    if (!e || !e._scenePos) return;
+    const p = e._scenePos, dist = f.id === "solar-sun" ? 6e6 : 1.5e6;
+    state.viewer.camera.flyTo({ destination: new Cesium.Cartesian3(p.x, p.y + dist * 0.6, p.z + dist * 0.8), duration: 1.6 });
+  } catch { /* scene not ready */ }
 }
 function setFollow(hex) {
   const v = state.viewer;
   state.followHex = (state.followHex === hex) ? null : hex;
-  const e = state.followHex && state.entities.get(state.followHex);
+  const e = state.followHex && (state.solar.entities.get(`sol-${state.followHex}`) || state.entities.get(state.followHex));
   v.trackedEntity = (e && !e.cluster) ? e : undefined;
   document.getElementById("follow").classList.toggle("on", !!state.followHex);
   v.scene.requestRender();
@@ -337,7 +480,7 @@ function wireSearch() {
     const list = (q ? state.all.filter((f) => searchFields(f).toUpperCase().includes(q)) : []).slice(0, 8);
     out.innerHTML = list.map((f) => {
       const al = airlineFor(f);
-      return `<li data-id="${moverId(f)}">${al.iso ? `<img src="${flag(al.iso)}" alt="" loading="lazy" />` : ""}<span>${moverLabel(f)}</span></li>`;
+      return `<li data-id="${esc(moverId(f))}">${al.iso ? `<img src="${flag(al.iso)}" alt="" loading="lazy" />` : ""}<span>${esc(moverLabel(f))}</span></li>`;
     }).join("");
     out.querySelectorAll("li").forEach((li) => li.addEventListener("click", () => show(li.dataset.id)));
   });
@@ -346,6 +489,7 @@ async function live() {
   try {
     const s = await fetchJSON(snapshotUrl());
     setMode(s.src === "demo" ? "demo" : "live", `${DOMAINS[state.domain].label} · ${s.src}`);
+    if (s.earthHelio) state.solar.earthHelio = s.earthHelio;
     upsert(s.tracks || s.movers || []);
     return true;
   } catch { return false; }
@@ -368,6 +512,11 @@ function connectWS() {
     document.getElementById("nogl").hidden = false;
     return;
   }
+  if (window.__softwareGL) {
+    // CPU rendering: fewer pixels, capped frame rate, same picture.
+    try { viewer.resolutionScale = 0.75; viewer.targetFrameRate = 30; } catch { /* older engine */ }
+    announce("Software rendering detected: the globe uses CPU graphics and may feel slower.");
+  }
   wireSearch();
   wireModes();
   document.querySelectorAll(".layers button").forEach((b) => b.addEventListener("click", () => setLayer(b.dataset.lyr)));
@@ -388,7 +537,7 @@ function connectWS() {
   const ok = await live();
   if (!ok) { setMode("demo"); upsert(DEMO); }
   else connectWS();
-  setInterval(async () => { if (state.mode !== "live") return; try { const s = await fetchJSON(snapshotUrl()); upsert(s.tracks || s.movers || []); } catch { /* ws covers gaps */ } }, 15000);
+  setInterval(async () => { if (state.mode !== "live") return; try { const s = await fetchJSON(snapshotUrl()); if (s.earthHelio) state.solar.earthHelio = s.earthHelio; upsert(s.tracks || s.movers || []); } catch { /* ws covers gaps */ } }, 15000);
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   handler.setInputAction((click) => {
     const p = viewer.scene.pick(click.position);

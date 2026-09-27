@@ -1,6 +1,6 @@
 # Test Strategy — SkyTrack (PROJECT2)
 
-Status: static Leaflet landing (`public/`) + mock snapshot; `server/` not built yet. Strategy covers present UI + planned Node/`ws` backend without touching app code.
+Status: Cesium 3D globe (`public/`) + Node/`ws` backend (`server/`); 2D fallback removed 2026-09-27 (3D-only by design).
 
 ## Stack (test-only, zero new app deps)
 - Unit/integration/static: Node built-in `node:test` + `node:assert/strict`. Run offline, no install.
@@ -8,7 +8,7 @@ Status: static Leaflet landing (`public/`) + mock snapshot; `server/` not built 
 - A11y automation (later): axe-core via Playwright. Manual checklist now in `tests/docs/ACCESSIBILITY-PLAN.md`.
 
 ## Pyramid
-1. Static contract tests (fast, always green): assert `public/` keeps Leaflet layers, detail IDs, ws hook, no secrets, no per-tab feed calls.
+1. Static contract tests (fast, always green): assert `public/` keeps Cesium globe, detail IDs, ws hook, no secrets, no per-tab feed calls.
 2. Unit: pure logic in `tests/helpers/` mirroring LLD contracts (geo, fares, capacity) + edge/invalid input.
 3. Integration: mock HTTP feed (modes ok/empty/429/slow/invalid) → fetch/normalize/backoff/timeout, offline + stale-cache behavior. No prod data, no paid calls.
 4. E2E (Playwright, later): launch, search, detail, empty/loading/error, small-screen, slow-network.
