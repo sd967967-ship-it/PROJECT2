@@ -23,6 +23,10 @@ $RECYCLE.BIN/
 
 # Dependencies (uncomment for your stack)
 node_modules/
+# Playwright E2E artifacts
+test-results/
+playwright-report/
+tests/reports/*.png
 # __pycache__/
 # .venv/
 # target/

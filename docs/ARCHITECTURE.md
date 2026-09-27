@@ -5,6 +5,7 @@
 - Frontend: `public/` Cesium 1.x CDN (Google satellite default) + Leaflet 2D fallback + markercluster + flagcdn flags. No build step.
 - Data: JSON-only (`server/data/*.json`); SQLite/Neon only when fare collector lands. Static sets are curated worldwide bundles (100+ ports, 70 rail/bus stops, coordinates ~0.01°); live positions always come from feeds, never the static files.
 - Tests: `npm test` in `server/` (21 green, verified 2026-09-27) + root `node tests/run.js` (38 green, verified 2026-09-27).
+- E2E: `@playwright/test` devDependency at repo root (`tests/e2e/`, chromium) — real-browser visibility + flows, installed 2026-09-27.
 
 ## Environments
 - dev: `http://localhost:3000` (`npm start` in `server/`), serves API + `public/`.

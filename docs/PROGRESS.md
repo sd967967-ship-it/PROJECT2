@@ -22,6 +22,7 @@ _Last updated: 2026-09-27_
 - All transports shipped — 2026-09-27 — `server/src/tracking/source.js` seam + sea/streets/space adapters, mode switcher, per-domain API + ws, 40 server / 39 repo tests green; sea/streets live paths parked behind `AIS_URL`/`TRANSIT_URL` (demo + ports/stops bundled), space live via CelesTrak + math-only solar.
 - Worldwide + deep space round — 2026-09-27 — 100+ ports, 70 rail/bus stops worldwide; TLE movers carry period/inclination/apsides/class/launch year; solar adds Pluto + 5 major moons; 18 human-made craft as vicinity markers (`/api/space/craft`); playwright-best-practices skill installed (86.9K installs, low-risk) for future real-browser E2E.
 - Far-belt + solar visibility — 2026-09-27 — TLE groups extended to GEO/GNSS/weather (geo, gps-ops, galileo, glo-ops, goes); solar/craft markers larger with far-visible labels; ◉ solar tour button in Space mode (3D + 2D).
+- Real-browser E2E — 2026-09-27 — Playwright suite live (`tests/e2e/flows.spec.js`, desktop + mobile); 5 cycles to green; screenshots proved solar bodies render and caught 3 shipped bugs (airport leak across modes, label pile-ups, mobile tour blocked) — all fixed same turn; see `tests/reports/E2E-CYCLES.md`.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.

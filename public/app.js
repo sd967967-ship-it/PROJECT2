@@ -1,5 +1,5 @@
 // SkyTrack 3D globe. Same-origin /api + ws only. Shared dossier logic lives in shared.js.
-const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", domain: "sky", ws: null, all: [], imagery: {}, selectedHex: null, followHex: null, trails: new Map() };
+const state = { viewer: null, entities: new Map(), routeEnt: null, trailEnt: null, mode: "demo", domain: "sky", ws: null, all: [], imagery: {}, airports: [], selectedHex: null, followHex: null, trails: new Map() };
 function pushTrail(f) {
   if (!f || f.hex == null) return;
   let t = state.trails.get(f.hex);
@@ -101,8 +101,10 @@ function setDomain(d) {
   for (const [, e] of state.entities) state.viewer.entities.remove(e);
   state.entities.clear();
   state.selectedHex = null; state.followHex = null; state.tourIdx = null;
+  for (const a of state.airports) a.show = (d === "sky");
   const tour = document.getElementById("tour");
   if (tour) tour.hidden = d !== "space";
+  resetDossier(d);
   sendSub();
   live();
 }
@@ -173,7 +175,7 @@ function ensureSingle(v, f, pos) {
   // they stay readable at high altitude. Labels for solar/craft stay visible
   // from much farther out so the bodies can actually be found.
   const px = f.kind === "solar" ? 42 : (f.kind === "satellite" && (f.altM || 0) > 20000000 ? 44 : 30);
-  const labelFar = (f.kind === "solar" || f.kind === "craft") ? 3e7 : 9e6;
+  const labelFar = f.kind === "solar" ? 3e7 : (f.kind === "craft" ? 4e6 : 9e6);
   let e = state.entities.get(id);
   if (!e) {
     e = v.entities.add({
@@ -292,11 +294,14 @@ async function loadAirports() {
   try {
     const d = await fetchJSON("/api/airports");
     for (const a of d.airports || []) {
-      v.entities.add({
+      const ent = v.entities.add({
         id: `ap:${a.iata}`, position: Cesium.Cartesian3.fromDegrees(a.lon, a.lat, 5000),
         point: { pixelSize: 7, color: Cesium.Color.fromCssColorString("#57e6ff"), outlineColor: Cesium.Color.BLACK, outlineWidth: 2 },
         label: { text: `${a.iata} · ${a.nearby || 0}`, font: "11px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -16), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(3e6, 3e7) },
-      }).airport = a;
+      });
+      ent.airport = a;
+      ent.show = state.domain === "sky"; // hub dots belong to sky mode only
+      state.airports.push(ent);
     }
     v.scene.requestRender();
   } catch { /* airports are decoration; map works without them */ }

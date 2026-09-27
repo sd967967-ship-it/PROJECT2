@@ -44,6 +44,22 @@ function setMode(mode, src) {
   document.getElementById("modeBadge").textContent = mode === "live" ? `live · ${src}` : mode;
   document.getElementById("liveDot").classList.toggle("on", mode === "live");
 }
+const DOMAIN_PICK = { sky: "flight", sea: "vessel", streets: "vehicle", space: "object" };
+function resetDossier(domain) {
+  const dom = (domain && DOMAINS[domain]) ? domain : "sky";
+  document.getElementById("pTitle").textContent = `Pick a ${DOMAIN_PICK[dom]}`;
+  document.getElementById("pSub").textContent = "Click any badge on the globe.";
+  for (const id of ["pSpeed", "pAlt", "pHdg", "pVs", "pNear", "pCap"]) document.getElementById(id).textContent = "–";
+  document.getElementById("pRoute").textContent = "Position-only track";
+  document.getElementById("pServices").innerHTML = "";
+  document.getElementById("pFares").innerHTML = "<tr><td>route unknown</td><td>–</td></tr>";
+  document.getElementById("follow").textContent = dom === "sky" ? "Follow this flight" : "Follow";
+  document.getElementById("pFine").textContent = dom === "sky"
+    ? "Capacity is aircraft seats plus a typical-load band, an estimate. Fares are distance-modeled until collected history lands."
+    : dom === "space" ? "Satellites from CelesTrak TLE; solar subpoints from math-only ephemeris; craft markers show vicinity, not exact positions."
+    : dom === "sea" ? "Vessel positions keyless-AIS when configured, demo otherwise. Never navigation-grade."
+    : "Transit demo + static stops. Live vehicles park until a city feed is configured.";
+}
 async function fetchJSON(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);

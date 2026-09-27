@@ -1,6 +1,6 @@
 // SkyTrack 2D fallback map (Leaflet + Esri satellite). Used automatically when
 // WebGL/Cesium is unavailable. Same data, dossier, search, and ticker as 3D via shared.js.
-const state2d = { map: null, domain: "sky", ws: null, group: null, markers: new Map(), tracks: new Map(), trails: new Map(), routeLine: null, trailLine: null, all: [], layers: {}, selectedHex: null, followHex: null };
+const state2d = { map: null, domain: "sky", ws: null, group: null, markers: new Map(), tracks: new Map(), trails: new Map(), routeLine: null, trailLine: null, all: [], layers: {}, airports: [], selectedHex: null, followHex: null };
 function initMap() {
   const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
   const googleHyb = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
@@ -63,8 +63,15 @@ function setDomain2d(d) {
   for (const [, m] of state2d.markers) state2d.group.removeLayer(m);
   state2d.markers.clear();
   state2d.selectedHex = null; state2d.followHex = null; state2d.tourIdx = null;
+  for (const m of state2d.airports) {
+    try {
+      if (d === "sky") { if (!state2d.map.hasLayer(m)) m.addTo(state2d.map); }
+      else state2d.map.removeLayer(m);
+    } catch { /* decoration only */ }
+  }
   const tour = document.getElementById("tour");
   if (tour) tour.hidden = d !== "space";
+  resetDossier(d);
   sendSub2d();
   live2d();
 }
@@ -186,10 +193,12 @@ async function loadAirports2d() {
   try {
     const d = await fetchJSON("/api/airports");
     for (const a of d.airports || []) {
-      L.circleMarker([a.lat, a.lon], { radius: 5, color: "#57e6ff", weight: 2, fillOpacity: 0.6 })
+      const m = L.circleMarker([a.lat, a.lon], { radius: 5, color: "#57e6ff", weight: 2, fillOpacity: 0.6 })
         .addTo(state2d.map)
         .bindTooltip(`${a.iata} · ${a.city} · ${a.nearby || 0} nearby`)
         .on("click", () => state2d.map.setView([a.lat, a.lon], 7));
+      if (state2d.domain !== "sky") state2d.map.removeLayer(m);
+      state2d.airports.push(m);
     }
   } catch { /* decoration only */ }
 }
