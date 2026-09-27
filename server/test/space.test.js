@@ -1,12 +1,17 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const sat = require("satellite.js");
-const { parseTle, demoSets, propagateToMovers, createTleStore } = require("../src/space/tle");
+const { parseTle, demoSets, tleDetails, propagateToMovers, createTleStore, TLE_URLS } = require("../src/space/tle");
 const { getSolarBodies } = require("../src/space/solar");
 const { CRAFT, toMovers } = require("../src/space/craft");
 
 const ISS_L1 = "1 25544U 98067A   26270.17419514  .00009528  00000+0  18291-3 0  9996";
 const ISS_L2 = "2 25544  51.6315 155.3455 0007168 193.0559 167.0244 15.48664528587569";
+test("tle default groups cover LEO plus the far belt", () => {
+  for (const g of ["stations", "visual", "geo", "gps-ops", "galileo", "glo-ops", "goes"]) {
+    assert.ok(TLE_URLS.some((u) => u.includes(`GROUP=${g}`)), `missing ${g}`);
+  }
+});
 test("tle parses 3-line sets, skips garbage", () => {
   const sets = parseTle(`ISS (ZARYA)\n${ISS_L1}\n${ISS_L2}\njunk line\nCSS (TIANHE)\n1 48274U 21035A   26269.87524669  .00012403  00000+0  15118-3 0  9996\n2 48274  41.4683  64.5157 0001914 314.1424  45.9257 15.60301806309043\n`);
   assert.equal(sets.length, 2);

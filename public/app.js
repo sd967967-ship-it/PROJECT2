@@ -100,7 +100,9 @@ function setDomain(d) {
   });
   for (const [, e] of state.entities) state.viewer.entities.remove(e);
   state.entities.clear();
-  state.selectedHex = null; state.followHex = null;
+  state.selectedHex = null; state.followHex = null; state.tourIdx = null;
+  const tour = document.getElementById("tour");
+  if (tour) tour.hidden = d !== "space";
   sendSub();
   live();
 }
@@ -167,12 +169,17 @@ function clusterBadge(n) {
 function cellFor(f, cell) { return `${Math.floor(f.lat / cell)}:${Math.floor(f.lon / cell)}`; }
 function ensureSingle(v, f, pos) {
   const id = moverId(f);
+  // Solar bodies glow large; far-belt satellites (GEO/GNSS) render larger so
+  // they stay readable at high altitude. Labels for solar/craft stay visible
+  // from much farther out so the bodies can actually be found.
+  const px = f.kind === "solar" ? 42 : (f.kind === "satellite" && (f.altM || 0) > 20000000 ? 44 : 30);
+  const labelFar = (f.kind === "solar" || f.kind === "craft") ? 3e7 : 9e6;
   let e = state.entities.get(id);
   if (!e) {
     e = v.entities.add({
       id, position: pos,
-      billboard: { image: iconFor(f), width: 30, height: 30, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.3, 2e7, 0.45), alignedAxis: Cesium.Cartesian3.ZERO },
-      label: { text: moverLabel(f), font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -32), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 9e6) },
+      billboard: { image: iconFor(f), width: px, height: px, scaleByDistance: new Cesium.NearFarScalar(2e5, 1.3, 2e7, 0.45), alignedAxis: Cesium.Cartesian3.ZERO },
+      label: { text: moverLabel(f), font: "12px 'IBM Plex Mono', monospace", fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -32), distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, labelFar) },
     });
     state.entities.set(id, e);
     e._hdg = f.hdg;
@@ -260,6 +267,17 @@ function drawSelectedTrail() {
   const t = state.selectedHex && state.trails.get(state.selectedHex);
   if (!t || t.length < 2) return;
   state.trailEnt = v.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArrayHeights(t.flatMap((p) => [p[1], p[0], 10500])), width: 2, material: Cesium.Color.fromCssColorString("#ffb454") } });
+}
+// Solar tour: cycle through solar bodies + craft, flying the camera to each
+// and opening its dossier — the bodies are spread planet-wide, so the tour is
+// how you actually visit them.
+function solarTour() {
+  const bodies = state.all.filter((f) => f.kind === "solar" || f.kind === "craft");
+  if (!bodies.length) return;
+  state.tourIdx = ((state.tourIdx == null ? -1 : state.tourIdx) + 1) % bodies.length;
+  const f = bodies[state.tourIdx];
+  show(moverId(f));
+  try { state.viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, 8000000), duration: 1.6 }); } catch { /* globe not ready */ }
 }
 function setFollow(hex) {
   const v = state.viewer;
@@ -360,6 +378,7 @@ function connectWS() {
   };
   document.getElementById("zin").addEventListener("click", () => stepZoom(1));
   document.getElementById("zout").addEventListener("click", () => stepZoom(-1));
+  document.getElementById("tour").addEventListener("click", () => solarTour());
   loadAirports();
   const ok = await live();
   if (!ok) { setMode("demo"); upsert(DEMO); }

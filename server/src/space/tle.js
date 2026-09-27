@@ -1,7 +1,9 @@
 // Space Adapter (TLE): CelesTrak fetch (verified keyless) + satellite.js
 // propagation. Fetcher accepted, never created (test seam).
 const DEMO_TLE = require("../../data/demo-satellites.json").tle;
-const TLE_URLS = (process.env.TLE_GROUPS || "stations,visual").split(",").map((g) =>
+// Groups cover LEO (stations, visual) plus the far belt: GEO communications,
+// GNSS constellations, and weather — still a handful of requests per hour.
+const TLE_URLS = (process.env.TLE_GROUPS || "stations,visual,geo,gps-ops,galileo,glo-ops,goes").split(",").map((g) =>
   `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(g.trim())}&FORMAT=tle`);
 async function fetchText(url, { timeoutMs = 12000 } = {}) {
   let res;

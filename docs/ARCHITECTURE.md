@@ -22,7 +22,7 @@
 | OpenSky REST | primary live positions | optional (anonymous works, auth raises quota) |
 | adsb.lol | 43-cell sweep fallback, unfiltered, no key (ODbL attribution) | no |
 | aiscast AIS | Sea Adapter live path (parked until `AIS_URL` set); demo vessels + ports bundled | only when configured |
-| CelesTrak TLE | Space Adapter source (verified live keyless 2026-09-27; hourly refresh + `satellite.js`) | no |
+| CelesTrak TLE | Space Adapter source (verified live keyless 2026-09-27; LEO + GEO/GNSS/weather groups, hourly refresh + `satellite.js`) | no |
 | NTES unofficial clients | rail pattern only; live rail parked behind `TRANSIT_URL` (polite polling + cache mandatory) | no |
 | GTFS-RT city feeds | per-city live vehicles (Madison/GZM/DE/FR keyless verified 2026-09-27) | per city — parked until configured |
 | ADSB One (`api.adsb.one`) | tried 2026-09-27: Cloudflare 403 even server-side | pending arrangement |

@@ -62,9 +62,19 @@ function setDomain2d(d) {
   });
   for (const [, m] of state2d.markers) state2d.group.removeLayer(m);
   state2d.markers.clear();
-  state2d.selectedHex = null; state2d.followHex = null;
+  state2d.selectedHex = null; state2d.followHex = null; state2d.tourIdx = null;
+  const tour = document.getElementById("tour");
+  if (tour) tour.hidden = d !== "space";
   sendSub2d();
   live2d();
+}
+function solarTour2d() {
+  const bodies = state2d.all.filter((f) => f.kind === "solar" || f.kind === "craft");
+  if (!bodies.length) return;
+  state2d.tourIdx = ((state2d.tourIdx == null ? -1 : state2d.tourIdx) + 1) % bodies.length;
+  const f = bodies[state2d.tourIdx];
+  show2d(moverId(f));
+  try { state2d.map.flyTo([f.lat, f.lon], 3, { duration: 1.2 }); } catch { /* map not ready */ }
 }
 function wireModes2d() {
   document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => setDomain2d(b.dataset.domain)));
@@ -197,6 +207,7 @@ async function loadAirports2d() {
   });
   document.getElementById("zin").addEventListener("click", () => state2d.map.zoomIn());
   document.getElementById("zout").addEventListener("click", () => state2d.map.zoomOut());
+  document.getElementById("tour").addEventListener("click", () => solarTour2d());
   loadAirports2d();
   const ok = await live2d();
   if (!ok) { setMode("demo-2d"); upsert2d(DEMO); }

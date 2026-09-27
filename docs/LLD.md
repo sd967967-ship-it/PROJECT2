@@ -65,7 +65,7 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | Adapter | Source | Key? | Status |
 |---------|--------|------|--------|
 | `adsb` | OpenSky + adsb.lol sweep | no (auth raises quota) | exists |
-| `tle` | CelesTrak stations+visual, hourly refresh + `satellite.js` | no (verified live keyless 2026-09-27) | exists (movers carry NORAD id, inclination, period, apsides, class, launch year) |
+| `tle` | CelesTrak (stations, visual, geo, gps-ops, galileo, glo-ops, goes), hourly refresh + `satellite.js` | no (verified live keyless 2026-09-27) | exists (movers carry NORAD id, inclination, period, apsides, class, launch year; far-belt sats render larger) |
 | `craft` | curated `server/data/craft.json` (18 human-made deep-space craft) as labeled vicinity markers on target subpoints | no | exists |
 | `ais` | AIS live path behind `AIS_URL`/`AIS_KEY`; demo vessels + 100+ worldwide ports bundled | only when configured | parked-config + demo |
 | `rail`/`transit` | generic JSON vehicle feed behind `TRANSIT_URL`; demo vehicles + 70 worldwide rail/bus stops bundled | only when configured | parked-config + demo |

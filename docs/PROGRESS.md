@@ -21,6 +21,7 @@ _Last updated: 2026-09-27_
 - Multimodal plan adopted — 2026-09-27 — docs aligned to `multimodal-space-plan.md`: TrackingSource seam, P6–P9 stories, domain Adapter registry (aiscast/CelesTrak/NTES/GTFS-RT verified keyless), key policy (agent never creates accounts), activation = config-only per WORKFLOW.md.
 - All transports shipped — 2026-09-27 — `server/src/tracking/source.js` seam + sea/streets/space adapters, mode switcher, per-domain API + ws, 40 server / 39 repo tests green; sea/streets live paths parked behind `AIS_URL`/`TRANSIT_URL` (demo + ports/stops bundled), space live via CelesTrak + math-only solar.
 - Worldwide + deep space round — 2026-09-27 — 100+ ports, 70 rail/bus stops worldwide; TLE movers carry period/inclination/apsides/class/launch year; solar adds Pluto + 5 major moons; 18 human-made craft as vicinity markers (`/api/space/craft`); playwright-best-practices skill installed (86.9K installs, low-risk) for future real-browser E2E.
+- Far-belt + solar visibility — 2026-09-27 — TLE groups extended to GEO/GNSS/weather (geo, gps-ops, galileo, glo-ops, goes); solar/craft markers larger with far-visible labels; ◉ solar tour button in Space mode (3D + 2D).
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.

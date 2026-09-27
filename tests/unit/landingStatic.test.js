@@ -78,6 +78,8 @@ test("U-STATIC-10 four tracking modes over backend only", () => {
   assert.ok(app.includes('domain: state.domain') || two.includes('domain: state2d.domain'), "missing domain ws sub");
   assert.match(shared, /DOMAINS/);
   assert.match(shared, /Spacecraft/);
+  assert.ok(html.includes('id="tour"'), "missing solar tour button");
+  assert.ok(app.includes("solarTour") && two.includes("solarTour2d"), "missing tour logic");
   assert.match(shared, /renderDomainDossier/);
   for (const src of [app, two, shared, html]) {
     assert.doesNotMatch(src, /celestrak\.org/i);
