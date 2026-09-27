@@ -1,6 +1,6 @@
 // SkyTrack 2D fallback map (Leaflet + Esri satellite). Used automatically when
 // WebGL/Cesium is unavailable. Same data, dossier, search, and ticker as 3D via shared.js.
-const state2d = { map: null, group: null, markers: new Map(), tracks: new Map(), trails: new Map(), routeLine: null, trailLine: null, all: [], layers: {}, selectedHex: null, followHex: null };
+const state2d = { map: null, domain: "sky", ws: null, group: null, markers: new Map(), tracks: new Map(), trails: new Map(), routeLine: null, trailLine: null, all: [], layers: {}, selectedHex: null, followHex: null };
 function initMap() {
   const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
   const googleHyb = L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", { subdomains: ["mt0", "mt1", "mt2", "mt3"], maxZoom: 19, attribution: "Imagery © Google" });
@@ -29,9 +29,50 @@ function planeIcon(f) {
     iconSize: [30, 30], iconAnchor: [15, 15],
   });
 }
+// Non-sky movers get compact color-coded SVG glyphs sharing the plane rotation trick.
+function glyphIcon(f) {
+  const color = (DOMAINS[state2d.domain] || DOMAINS.sky).color;
+  const hdg = ((Number(f.hdg) || 0) % 360 + 360) % 360;
+  const inner = f.kind === "vessel"
+    ? `<g transform="rotate(${hdg})" fill="${color}" stroke="#0b2036" stroke-width="2.5"><path d="M0,-26 L10,10 L6,24 L-6,24 L-10,10 Z"/></g>`
+    : f.kind === "vehicle"
+    ? `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><rect x="-9" y="-15" width="18" height="30" rx="4"/><rect x="-6" y="-11" width="12" height="6" fill="#0b2036" stroke="none"/></g>`
+    : f.kind === "satellite"
+    ? `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><rect x="-13" y="-4" width="8" height="8"/><rect x="5" y="-4" width="8" height="8"/><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)"/></g>`
+    : `<g fill="${color}" stroke="#0b2036" stroke-width="2.5"><circle r="10"/><circle r="16" fill="none"/></g>`;
+  return L.divIcon({
+    className: "plane-icon",
+    html: `<svg viewBox="-30 -30 60 60" width="30" height="30">${inner}</svg>`,
+    iconSize: [30, 30], iconAnchor: [15, 15],
+  });
+}
+function iconFor2d(f) { return (f.kind || "flight") === "flight" ? planeIcon(f) : glyphIcon(f); }
+function snapshotUrl2d() { return state2d.domain === "sky" ? "/api/snapshot" : `/api/${state2d.domain}/snapshot`; }
+function detailUrl2d(id) { return DOMAINS[state2d.domain].detail(id); }
+function sendSub2d() {
+  try { if (state2d.ws && state2d.ws.readyState === 1) state2d.ws.send(JSON.stringify({ op: "sub", domain: state2d.domain })); } catch { /* reconnect covers */ }
+}
+function setDomain2d(d) {
+  if (!DOMAINS[d] || d === state2d.domain) return;
+  state2d.domain = d;
+  document.querySelectorAll(".modes button").forEach((b) => {
+    const on = b.dataset.domain === d;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  for (const [, m] of state2d.markers) state2d.group.removeLayer(m);
+  state2d.markers.clear();
+  state2d.selectedHex = null; state2d.followHex = null;
+  sendSub2d();
+  live2d();
+}
+function wireModes2d() {
+  document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => setDomain2d(b.dataset.domain)));
+}
 function pushTrail2d(f) {
-  let t = state2d.trails.get(f.hex);
-  if (!t) { t = []; state2d.trails.set(f.hex, t); }
+  const id = moverId(f);
+  let t = state2d.trails.get(id);
+  if (!t) { t = []; state2d.trails.set(id, t); }
   const last = t[t.length - 1];
   if (!last || Math.abs(last[0] - f.lat) > 1e-4 || Math.abs(last[1] - f.lon) > 1e-4) t.push([f.lat, f.lon]);
   if (t.length > 12) t.shift();
@@ -53,25 +94,26 @@ function upsert2d(list) {
   }
   state2d.tracks = new Map();
   for (const f of list.slice(0, 1200)) {
+    if (!f.hex) f.hex = f.id; // movers key on id; sky tracks on hex
     seen.add(f.hex);
     state2d.tracks.set(f.hex, f);
     pushTrail2d(f);
     let m = state2d.markers.get(f.hex);
     if (!m) {
-      m = L.marker([f.lat, f.lon], { icon: planeIcon(f), title: f.callsign || f.hex });
+      m = L.marker([f.lat, f.lon], { icon: iconFor2d(f), title: moverLabel(f) });
       m.on("click", () => show2d(f.hex));
       state2d.markers.set(f.hex, m);
       state2d.group.addLayer(m);
     } else {
       m.setLatLng([f.lat, f.lon]);
-      m.setIcon(planeIcon(f));
+      m.setIcon(iconFor2d(f));
     }
   }
   for (const [hex, m] of state2d.markers) {
     if (!seen.has(hex)) { state2d.group.removeLayer(m); state2d.markers.delete(hex); state2d.trails.delete(hex); }
   }
   state2d.all = list;
-  updateTicker(list);
+  updateTicker(list, state2d.domain);
   drawSelectedTrail2d();
   if (state2d.followHex && state2d.tracks.has(state2d.followHex)) {
     const t = state2d.tracks.get(state2d.followHex);
@@ -86,10 +128,10 @@ function drawRoute2d(arc) {
 async function show2d(hex) {
   let f;
   try {
-    const d = await fetchJSON(`/api/flights/${hex}`);
-    f = d.flight; setMode("live", d.src);
+    const d = await fetchJSON(detailUrl2d(hex));
+    f = d.flight || d.vessel || d.vehicle || d.object; setMode("live", d.src);
   } catch {
-    f = state2d.all.find((x) => x.hex === hex);
+    f = state2d.all.find((x) => moverId(x) === hex);
     if (!f) return;
   }
   renderDossier(f);
@@ -104,29 +146,31 @@ function wireSearch2d() {
   const box = document.getElementById("search"), out = document.getElementById("results");
   box.addEventListener("input", () => {
     const q = box.value.trim().toUpperCase();
-    const list = (q ? state2d.all.filter((f) => `${f.callsign || ""} ${f.origin || ""} ${f.dest || ""} ${f.hex}`.toUpperCase().includes(q)) : []).slice(0, 8);
+    const list = (q ? state2d.all.filter((f) => searchFields(f).toUpperCase().includes(q)) : []).slice(0, 8);
     out.innerHTML = list.map((f) => {
       const al = airlineFor(f);
-      return `<li data-hex="${f.hex}">${al.iso ? `<img src="${flag(al.iso)}" alt="" loading="lazy" />` : ""}<span>${f.callsign || f.hex}</span></li>`;
+      return `<li data-id="${moverId(f)}">${al.iso ? `<img src="${flag(al.iso)}" alt="" loading="lazy" />` : ""}<span>${moverLabel(f)}</span></li>`;
     }).join("");
-    out.querySelectorAll("li").forEach((li) => li.addEventListener("click", () => show2d(li.dataset.hex)));
+    out.querySelectorAll("li").forEach((li) => li.addEventListener("click", () => show2d(li.dataset.id)));
   });
 }
 async function live2d() {
   try {
-    const s = await fetchJSON("/api/snapshot");
-    setMode(s.src === "demo" ? "demo-2d" : "live-2d", s.src);
-    upsert2d(s.tracks);
+    const s = await fetchJSON(snapshotUrl2d());
+    setMode(s.src === "demo" ? "demo-2d" : "live-2d", `${DOMAINS[state2d.domain].label} · ${s.src}`);
+    upsert2d(s.tracks || s.movers || []);
     return true;
   } catch { return false; }
 }
 function connectWS2d() {
   let ws = null;
   try { ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`); } catch { return; }
+  state2d.ws = ws;
+  ws.onopen = () => sendSub2d();
   ws.onmessage = (ev) => {
-    try { const m = JSON.parse(ev.data); if (m.op === "diff" && m.upsert) { setMode(m.src === "demo" ? "demo-2d" : "live-2d", m.src); upsert2d(m.upsert); } } catch { /* keep last frame */ }
+    try { const m = JSON.parse(ev.data); if (m.op === "diff" && m.upsert) { setMode(m.src === "demo" ? "demo-2d" : "live-2d", `${DOMAINS[state2d.domain].label} · ${m.src}`); upsert2d(m.upsert); } } catch { /* keep last frame */ }
   };
-  ws.onclose = () => setTimeout(connectWS2d, 5000);
+  ws.onclose = () => { state2d.ws = null; setTimeout(connectWS2d, 5000); };
 }
 async function loadAirports2d() {
   try {
@@ -145,6 +189,7 @@ async function loadAirports2d() {
   initMap();
   document.getElementById("pSub").textContent = "Click any badge on the map.";
   wireSearch2d();
+  wireModes2d();
   document.getElementById("close").addEventListener("click", () => { drawRoute2d(null); state2d.selectedHex = null; drawSelectedTrail2d(); });
   document.getElementById("follow").addEventListener("click", () => {
     state2d.followHex = (state2d.followHex && state2d.followHex === state2d.selectedHex) ? null : state2d.selectedHex;
@@ -157,6 +202,6 @@ async function loadAirports2d() {
   if (!ok) { setMode("demo-2d"); upsert2d(DEMO); }
   else connectWS2d();
   setInterval(async () => {
-    try { const s = await fetchJSON("/api/snapshot"); upsert2d(s.tracks); } catch { /* ws covers gaps */ }
+    try { const s = await fetchJSON(snapshotUrl2d()); upsert2d(s.tracks || s.movers || []); } catch { /* ws covers gaps */ }
   }, 15000);
 })();

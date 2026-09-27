@@ -22,6 +22,9 @@
 <header class="rail">
   <div class="brand"><img class="logo" src="./logo.svg" alt="SkyTrack logo" />SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
   <input id="search" type="search" placeholder="Search callsign, airline, airport…" aria-label="Search flights" />
+  <div class="modes" role="group" aria-label="Tracking mode">
+    <button data-domain="sky" class="on" aria-pressed="true">Sky</button><button data-domain="sea" aria-pressed="false">Sea</button><button data-domain="streets" aria-pressed="false">Streets</button><button data-domain="space" aria-pressed="false">Space</button>
+  </div>
   <div class="layers" role="group" aria-label="Imagery">
     <button data-lyr="sat" class="on">Satellite</button><button data-lyr="hybrid">Hybrid</button><button data-lyr="street">Streets</button><button data-lyr="esri">Esri</button>
   </div>
@@ -49,7 +52,7 @@
   <p class="fine" id="pFine">Capacity is aircraft seats plus a typical-load band, an estimate. Fares are distance-modeled until collected history lands.</p>
 </aside>
 <footer class="ticker">
-  <span id="count">0</span> airborne ·
+  <span id="count">0</span> <span id="noun">airborne</span> ·
   <span id="topList"></span>
   <span id="airportSection" class="muted-sm" style="margin-left:1em; font-size:0.8em;">airport: —</span>
   <span class="src">Data OpenSky + adsb.lol · Imagery Esri + OSM · Flags flagcdn</span>

@@ -17,6 +17,7 @@ $RECYCLE.BIN/
 # Env / secrets - never commit
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 

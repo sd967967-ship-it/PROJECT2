@@ -55,21 +55,22 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 |----------|-----------|-------|
 | getServices | `getServices(airlineCode) -> {wifi, meals, baggage, entertainment}` | `server/data/airlines.json` (30 airlines, verified 2026-09-27); unknown → `{unknown:true}` |
 
-## TrackingSource Module (planned, per multimodal plan)
+## TrackingSource Module (built 2026-09-27, per multimodal plan)
 | Function | Signature | Notes |
 |----------|-----------|-------|
-| getSnapshot | `getSnapshot(domain, bbox?) -> movers[]` | `movers[] = {id, lat, lon, altM, velKmh, hdg, label, meta}`; one seam for sky/sea/streets/space |
+| getSnapshot | `getSnapshot(domain, bbox?) -> {t, src, movers[]}` | `movers[] = {id, domain, kind, lat, lon, altM, velKmh, hdg, label, meta, src}`; one seam for sky/sea/streets/space; see `server/src/tracking/source.js` |
+| deriveSrc | `deriveSrc(cacheSrc, states) -> live\|fallback\|demo\|none` | live only on primary success; demo when every row is demo or cache empty |
 
-## Domain Adapters (planned; registry grows by config, not code)
+## Domain Adapters (registry grows by config, not code)
 | Adapter | Source | Key? | Status |
 |---------|--------|------|--------|
 | `adsb` | OpenSky + adsb.lol sweep | no (auth raises quota) | exists |
-| `tle` | CelesTrak + `satellite.js` (MIT) | no | planned Phase 1 |
-| `ais` | aiscast bbox/stream (verified keyless 2026-09-27); aisstream slot | keyless now, key slot later | planned |
-| `rail` | NTES unofficial clients, station-sweep poller | no (unofficial: polite + cache) | planned |
-| `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | planned |
-| `gtfs-static` | open GTFS stops worldwide | no | planned |
-| `solar` | Kepler math, zero network | no | planned Phase 1 |
+| `tle` | CelesTrak stations+visual, hourly refresh + `satellite.js` | no (verified live keyless 2026-09-27) | exists |
+| `ais` | AIS live path behind `AIS_URL`/`AIS_KEY`; demo vessels + ports bundled | only when configured | parked-config + demo |
+| `rail`/`transit` | generic JSON vehicle feed behind `TRANSIT_URL`; demo vehicles + static stops bundled | only when configured | parked-config + demo |
+| `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | parked |
+| `gtfs-static` | bundled `server/data/stops.json` worldwide hubs | no | exists |
+| `solar` | Kepler math + lunar theory, zero network | no | exists |
 
 ## Broadcast Module
 | Function | Signature | Notes |

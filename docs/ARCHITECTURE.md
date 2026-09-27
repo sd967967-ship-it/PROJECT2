@@ -1,7 +1,7 @@
 # Architecture
 
 ## Tech stack
-- Backend: Node 22, Express 4, `ws` 8 (`server/package.json`, installed 2026-09-27). Planned: `satellite.js` (MIT, TLE propagation) — record here before install per AGENTS.md.
+- Backend: Node 22, Express 4, `ws` 8, `satellite.js` 7 (SGP4 propagation for the Space Adapter; MIT) (`server/package.json`, installed 2026-09-27). No other new deps.
 - Frontend: `public/` Cesium 1.x CDN (Google satellite default) + Leaflet 2D fallback + markercluster + flagcdn flags. No build step.
 - Data: JSON-only (`server/data/*.json`); SQLite/Neon only when fare collector lands.
 - Tests: `npm test` in `server/` (21 green, verified 2026-09-27) + root `node tests/run.js` (38 green, verified 2026-09-27).
@@ -21,10 +21,10 @@
 |---------|-----|-----------------|
 | OpenSky REST | primary live positions | optional (anonymous works, auth raises quota) |
 | adsb.lol | 43-cell sweep fallback, unfiltered, no key (ODbL attribution) | no |
-| aiscast AIS | keyless vessels bbox/stream (verified live 2026-09-27) — Sea Adapter | no |
-| CelesTrak TLE | keyless satellite elements (verified live 2026-09-27) — Space Adapter | no |
-| NTES unofficial clients | keyless rail status/boards (unofficial: polite polling + cache mandatory) | no |
-| GTFS-RT city feeds | per-city live vehicles (Madison/GZM/DE/FR keyless verified 2026-09-27) | per city, mostly none |
+| aiscast AIS | Sea Adapter live path (parked until `AIS_URL` set); demo vessels + ports bundled | only when configured |
+| CelesTrak TLE | Space Adapter source (verified live keyless 2026-09-27; hourly refresh + `satellite.js`) | no |
+| NTES unofficial clients | rail pattern only; live rail parked behind `TRANSIT_URL` (polite polling + cache mandatory) | no |
+| GTFS-RT city feeds | per-city live vehicles (Madison/GZM/DE/FR keyless verified 2026-09-27) | per city — parked until configured |
 | ADSB One (`api.adsb.one`) | tried 2026-09-27: Cloudflare 403 even server-side | pending arrangement |
 | airplanes.live | tried 2026-09-27: 403, requires contacting them (feeder access) | pending |
 | adsb.fi | tried 2026-09-27: no compatible v2 endpoint found | pending |
@@ -36,7 +36,13 @@
 |-----|---------|-----------|
 | `PORT` | backend port (default 3000) | host env / `.env` (gitignored) |
 | `OPENSKY_USER` / `OPENSKY_PASS` | raise OpenSky quota | host env, never repo |
-| `POLL_MS` | poll interval (default 30000) | env |
+| `POLL_MS` | sky poll interval (default 30000) | env |
+| `SEA_POLL_MS` | sea poll interval (default 60000) | env |
+| `AIS_URL` / `AIS_KEY` | sea live feed (parked; demo vessels until set) | host env, never repo |
+| `STREET_POLL_MS` | streets poll interval (default 30000) | env |
+| `TRANSIT_URL` | streets live JSON vehicle feed (parked; demo + stops until set) | host env, never repo |
+| `TLE_GROUPS` | CelesTrak groups (default `stations,visual`) | env |
+| `TLE_REFRESH_MS` | TLE refresh interval (default 3600000, hourly) | env |
 | `AIS_KEY` | aisstream key (parked; aiscast needs none) | host env, never repo |
 | `GTFS_RT_URL_<CITY>` | per-city GTFS-RT feed URL (parked until added) | host env / config, never repo |
 | `GIT_TERMINAL_PROMPT` | `0` for background jobs | `scripts/auto-sync.ps1` |

@@ -6,13 +6,20 @@ const { Poller } = require("./ingestion/poller");
 const { fetchAll: fetchOpenSky } = require("./ingestion/openskyAdapter");
 const { WORLD_GRID, fetchSweep } = require("./ingestion/adsbLolAdapter");
 const { fuse } = require("./fusion/fuse");
-const { haversineKm, arcPoints } = require("./fusion/geo");
+const { haversineKm, arcPoints, nearestAirport } = require("./fusion/geo");
 const { etaFor } = require("./fusion/eta");
 const { getCapacity } = require("./capacity");
 const { estimateFares } = require("./pricing");
 const { airlineOf, getServices } = require("./services");
 const { attach } = require("./broadcast");
 const { RouteCache } = require("./routes");
+const { fetchJson } = require("./ingestion/fetchJson");
+const sea = require("./sea/aisAdapter");
+const streets = require("./streets/transitAdapter");
+const tle = require("./space/tle");
+const solar = require("./space/solar");
+const satellite = require("satellite.js");
+const { DOMAINS, DOMAIN_META, assertDomain, deriveSrc, createRegistry } = require("./tracking/source");
 
 const AIRPORTS = require("../data/airports.json");
 const COUNTRIES = require("../data/countries.json");
@@ -84,6 +91,67 @@ const poller = new Poller({
   },
   intervalMs: Number(process.env.POLL_MS || 30000),
 });
+// One poller per domain (see HLD.md): sea/streets reuse Poller with demo
+// fallback; space refreshes TLE hourly and propagates per request.
+const seaPoller = new Poller({
+  fetchPrimary: () => sea.fetchLive({ fetchJson, url: process.env.AIS_URL, apiKey: process.env.AIS_KEY }),
+  fetchFallback: async () => sea.demoVessels(),
+  intervalMs: Number(process.env.SEA_POLL_MS || 60000),
+});
+const streetsPoller = new Poller({
+  fetchPrimary: () => streets.fetchLive({ fetchJson, url: process.env.TRANSIT_URL }),
+  fetchFallback: async () => streets.demoVehicles(),
+  intervalMs: Number(process.env.STREET_POLL_MS || 30000),
+});
+const tleStore = tle.createTleStore();
+function skyToMover(t) {
+  return {
+    id: t.hex, domain: "sky", kind: "flight",
+    lat: t.lat, lon: t.lon, altM: t.altM, velKmh: t.velKmh, hdg: t.hdg,
+    label: t.callsign || t.hex,
+    meta: { origin: t.origin, dest: t.dest, type: t.type, near: t.near && t.near.iata },
+    src: t.src,
+  };
+}
+function seaSnapshot() {
+  const s = seaPoller.getSnapshot();
+  const states = (s.states && s.states.length) ? s.states : sea.demoVessels();
+  const src = (s.states && s.states.length) ? deriveSrc(s.src, s.states) : "demo";
+  return { t: s.t || Date.now(), src, movers: sea.toMovers(states, src) };
+}
+function streetsSnapshot() {
+  const s = streetsPoller.getSnapshot();
+  const states = (s.states && s.states.length) ? s.states : streets.demoVehicles();
+  const src = (s.states && s.states.length) ? deriveSrc(s.src, s.states) : "demo";
+  return { t: s.t || Date.now(), src, movers: streets.toMovers(states, src) };
+}
+function spaceSnapshot() {
+  const now = new Date();
+  const satMovers = tle.propagateToMovers(tleStore.sets(), now, satellite, tleStore.src());
+  const solarMovers = solar.getSolarBodies(now);
+  return { t: now.getTime(), src: tleStore.src(), movers: [...satMovers, ...solarMovers] };
+}
+const domains = createRegistry({
+  sky: { getSnapshot: () => { const s = tracks(); return { t: s.t, src: s.src, movers: s.tracks.map(skyToMover) }; } },
+  sea: { getSnapshot: seaSnapshot },
+  streets: { getSnapshot: streetsSnapshot },
+  space: { getSnapshot: spaceSnapshot },
+});
+function seaDetail(id) {
+  const m = seaSnapshot().movers.find((x) => x.id === String(id));
+  if (!m) return null;
+  const port = nearestAirport(m.lat, m.lon, sea.ports.map((p) => ({ ...p, iata: p.code })));
+  return { ...m, near: port && { iata: port.code || port.iata, city: port.city, distKm: port.distKm } };
+}
+function streetsDetail(id) {
+  const m = streetsSnapshot().movers.find((x) => x.id === String(id));
+  if (!m) return null;
+  const stop = nearestAirport(m.lat, m.lon, streets.stops.map((p) => ({ ...p, iata: p.id })));
+  return { ...m, near: stop && { iata: stop.id || stop.iata, city: stop.city, distKm: stop.distKm } };
+}
+function spaceDetail(id) {
+  return spaceSnapshot().movers.find((x) => x.id === String(id)) || null;
+}
 function build() {
   const app = express();
   app.disable("x-powered-by");
@@ -129,6 +197,43 @@ function build() {
     }
     res.json({ t: s.t, src: s.src, flight });
   });
+  app.get("/api/domains", (req, res) => res.json({ domains: domains.domains() }));
+  app.get("/api/:domain/snapshot", (req, res) => {
+    let d;
+    try { d = assertDomain(req.params.domain); }
+    catch { return res.status(404).json({ error: "unknown domain" }); }
+    if (d === "sky") {
+      const s = tracks();
+      return res.json({ t: s.t, src: s.src, count: s.tracks.length, tracks: s.tracks });
+    }
+    const s = domains.getSnapshot(d);
+    res.json({ t: s.t, src: s.src, count: s.movers.length, movers: s.movers });
+  });
+  app.get("/api/sea/vessels/:id", (req, res) => {
+    const s = seaSnapshot();
+    const v = seaDetail(req.params.id);
+    if (!v) return res.status(404).json({ error: "stale, retry" });
+    res.json({ t: s.t, src: s.src, vessel: v });
+  });
+  app.get("/api/streets/vehicles/:id", (req, res) => {
+    const s = streetsSnapshot();
+    const v = streetsDetail(req.params.id);
+    if (!v) return res.status(404).json({ error: "stale, retry" });
+    res.json({ t: s.t, src: s.src, vehicle: v });
+  });
+  app.get("/api/streets/stops", (req, res) => {
+    res.json({ t: Date.now(), src: "static", stops: streets.stops });
+  });
+  app.get("/api/space/objects/:id", (req, res) => {
+    const s = spaceSnapshot();
+    const o = spaceDetail(req.params.id);
+    if (!o) return res.status(404).json({ error: "stale, retry" });
+    res.json({ t: s.t, src: s.src, object: o });
+  });
+  app.get("/api/space/solar", (req, res) => {
+    const bodies = solar.getSolarBodies(new Date());
+    res.json({ t: Date.now(), src: "solar", count: bodies.length, bodies });
+  });
   app.use(express.static(path.join(__dirname, "..", "..", "public")));
   return app;
 }
@@ -136,11 +241,22 @@ function start(port = Number(process.env.PORT || 3000)) {
   const app = build();
   const server = app.listen(port, () => console.log(`SkyTrack on http://localhost:${server.address().port} src=${poller.getSnapshot().src}`));
   const wss = new WebSocketServer({ server });
-  // Broadcast fused tracks: wrap poller snapshot through the same track pipeline.
-  const fused = { getSnapshot: () => { const s = tracks(); return { t: s.t, src: s.src, states: s.tracks }; } };
-  attach(wss, fused);
+  // Broadcast per-domain snapshots over the same ws contract (see TECHFLOW.md).
+  const provider = {
+    getSnapshot: () => { const s = tracks(); return { t: s.t, src: s.src, states: s.tracks }; },
+    getSnapshotFor: (domain) => {
+      if (domain === "sea") { const s = seaSnapshot(); return { t: s.t, src: s.src, states: s.movers }; }
+      if (domain === "streets") { const s = streetsSnapshot(); return { t: s.t, src: s.src, states: s.movers }; }
+      if (domain === "space") { const s = spaceSnapshot(); return { t: s.t, src: s.src, states: s.movers }; }
+      const s = tracks(); return { t: s.t, src: s.src, states: s.tracks };
+    },
+  };
+  attach(wss, provider);
   poller.start();
-  return { app, server, wss, poller };
+  seaPoller.start();
+  streetsPoller.start();
+  tleStore.start();
+  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, domains };
 }
 if (require.main === module) start();
 module.exports = { build, start, enrich, tracks, poller, isoFor };

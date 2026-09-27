@@ -36,11 +36,12 @@ html, body { margin: 0; height: 100%; background: radial-gradient(120% 100% at 5
 }
 .rail input:focus-visible, button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .layers { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.layers button {
+.layers button, .modes button {
   flex: 1 1 22%; padding: 7px 0; border-radius: 8px; border: 1px solid var(--line);
   background: transparent; color: var(--mut); font-family: var(--display); font-size: 12.5px; cursor: pointer;
 }
-.layers button.on { color: #061033; background: var(--silver-text); border-color: #c9d4e8; font-weight: 700; }
+.modes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.layers button.on, .modes button.on { color: #061033; background: var(--silver-text); border-color: #c9d4e8; font-weight: 700; }
 #results { list-style: none; margin: 10px 0 0; padding: 0; max-height: 30vh; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
 #results li {
   display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--line);
