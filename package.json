@@ -1,0 +1,28 @@
+{
+  "name": "project2",
+  "version": "1.0.0",
+  "description": "Shared repo for multi-computer workflow (Option B).",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sd967967-ship-it/PROJECT2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sd967967-ship-it/PROJECT2/issues"
+  },
+  "homepage": "https://github.com/sd967967-ship-it/PROJECT2#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

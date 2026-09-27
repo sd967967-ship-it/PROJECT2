@@ -19,9 +19,18 @@ _Last updated: 2026-09-27_
 - Brand logo + theme — 2026-09-27 — `public/logo.svg` (navy gradient + chrome radar plane, favicon too); rail/dossier/ticker washed with the same gradient, silver headings/buttons; verified screenshot with logo + 6 yellow planes worldwide.
 - QA rounds 2+3 — 2026-09-27 — 15 cycles (13–27), 825/825 checks green; zoom + favicon fixes verified; feed stable ~800 merged tracks; release verdict conditionally-ready; `tests/reports/QA-FINAL.md`.
 - Multimodal plan adopted — 2026-09-27 — docs aligned to `multimodal-space-plan.md`: TrackingSource seam, P6–P9 stories, domain Adapter registry (aiscast/CelesTrak/NTES/GTFS-RT verified keyless), key policy (agent never creates accounts), activation = config-only per WORKFLOW.md.
+- All transports shipped — 2026-09-27 — `server/src/tracking/source.js` seam + sea/streets/space adapters, mode switcher, per-domain API + ws, 40 server / 39 repo tests green; sea/streets live paths parked behind `AIS_URL`/`TRANSIT_URL` (demo + ports/stops bundled), space live via CelesTrak + math-only solar.
+- Worldwide + deep space round — 2026-09-27 — 100+ ports, 70 rail/bus stops worldwide; TLE movers carry period/inclination/apsides/class/launch year; solar adds Pluto + 5 major moons; 18 human-made craft as vicinity markers (`/api/space/craft`); playwright-best-practices skill installed (86.9K installs, low-risk) for future real-browser E2E.
+- Far-belt + solar visibility — 2026-09-27 — TLE groups extended to GEO/GNSS/weather (geo, gps-ops, galileo, glo-ops, goes); solar/craft markers larger with far-visible labels; ◉ solar tour button in Space mode (3D + 2D).
+- Real-browser E2E — 2026-09-27 — Playwright suite live (`tests/e2e/flows.spec.js`, desktop + mobile); 5 cycles to green; screenshots proved solar bodies render and caught 3 shipped bugs (airport leak across modes, label pile-ups, mobile tour blocked) — all fixed same turn; see `tests/reports/E2E-CYCLES.md`.
+- Intelligence-platform round — 2026-09-28 — layer system (`/api/layers` + panel, 17 layers), USGS quakes, EONET events, Open-Meteo weather, SWPC Kp, CNEOS fireballs, Entur Norway boards, Finland + Ireland live rail, rail/metro/tram/bus split, terminator, solar animation + table, XSS escaping, security headers, input validation; CSP twice broke tiles/workers and was fixed via E2E evidence.
+- CPU-graphics support — 2026-09-27 — WebGL probe reports renderer class (SwiftShader tuned: 0.75 resolution, 30fps cap, announced); `failIfMajorPerformanceCaveat:false` never refuses a context; guided fix steps when WebGL is truly off; cache-buster bumped (?v=4); 2D fallback deleted (3D-only by design).
+- Council review round — 2026-09-28 — 3-reviewer council (security, UX/a11y, QA/data) returned 28 findings; fixed: stored-XSS sinks, fetch allowlist, mixed-source honesty, mobile rail/dossier overlap, dossier live-region, reduced-motion gates, touch targets, keyboard search + stale-notice, rail null-ID guard, Kp Poller-array bug, quakes floor, empty-payload timestamps; re-review on final state: no hard violations, P7 corrected to partial.
+- Dossier close fix — 2026-09-28 — the × button reset text but never hid the panel; now `closeDossier()` hides it, any open re-shows it, Escape closes too; verified by E-DETAIL-01 in a real browser.
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.
+- Airport board live on `development` (ticker shows top-3 airport codes w/ track counts) + ticker polish; localhost verified `200` on `/`, `/api/health`, `/api/snapshot`.
 
 ## ⏭️ Next up (done, kept for history)
 1. ~~Lift code freeze → scaffold `server/`~~ done 2026-09-27.

@@ -55,21 +55,26 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 |----------|-----------|-------|
 | getServices | `getServices(airlineCode) -> {wifi, meals, baggage, entertainment}` | `server/data/airlines.json` (30 airlines, verified 2026-09-27); unknown → `{unknown:true}` |
 
-## TrackingSource Module (planned, per multimodal plan)
+## TrackingSource Module (built 2026-09-27, per multimodal plan)
 | Function | Signature | Notes |
 |----------|-----------|-------|
-| getSnapshot | `getSnapshot(domain, bbox?) -> movers[]` | `movers[] = {id, lat, lon, altM, velKmh, hdg, label, meta}`; one seam for sky/sea/streets/space |
+| getSnapshot | `getSnapshot(domain, bbox?) -> {t, src, movers[]}` | `movers[] = {id, domain, kind, lat, lon, altM, velKmh, hdg, label, meta, src}`; one seam for sky/sea/streets/space; see `server/src/tracking/source.js` |
+| deriveSrc | `deriveSrc(cacheSrc, states) -> live\|fallback\|demo\|none` | live only on primary success; demo when every row is demo or cache empty |
 
-## Domain Adapters (planned; registry grows by config, not code)
+## Domain Adapters (registry grows by config, not code)
 | Adapter | Source | Key? | Status |
 |---------|--------|------|--------|
 | `adsb` | OpenSky + adsb.lol sweep | no (auth raises quota) | exists |
-| `tle` | CelesTrak + `satellite.js` (MIT) | no | planned Phase 1 |
-| `ais` | aiscast bbox/stream (verified keyless 2026-09-27); aisstream slot | keyless now, key slot later | planned |
-| `rail` | NTES unofficial clients, station-sweep poller | no (unofficial: polite + cache) | planned |
-| `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | planned |
-| `gtfs-static` | open GTFS stops worldwide | no | planned |
-| `solar` | Kepler math, zero network | no | planned Phase 1 |
+| `tle` | CelesTrak (stations, visual, geo, gps-ops, galileo, glo-ops, goes), hourly refresh + `satellite.js` | no (verified live keyless 2026-09-27) | exists (movers carry NORAD id, inclination, period, apsides, class, launch year; far-belt sats render larger) |
+| `craft` | curated `server/data/craft.json` (18 human-made deep-space craft) as labeled vicinity markers on target subpoints | no | exists |
+| `ais` | AIS live path behind `AIS_URL`/`AIS_KEY`; demo vessels + 100+ worldwide ports bundled | only when configured | parked-config + demo |
+| `rail`/`transit` | generic JSON vehicle feed behind `TRANSIT_URL`; demo vehicles (rail/metro/tram/bus systems) + 70 worldwide rail/bus stops bundled | only when configured | parked-config + demo |
+| `rail-fi` | Live Finland trains (Digitraffic open data, verified live 2026-09-28) | no | exists |
+| `rail-ie` | Live Ireland trains (Irish Rail open data, verified live 2026-09-28) | no | exists |
+| `entur` | Live departure boards Norway (verified live 2026-09-28, realtime flags) | no | exists |
+| `gtfs-rt` | per-city registry (Madison/GZM/DE/FR verified) | per city, mostly none | parked |
+| `gtfs-static` | bundled `server/data/stops.json` worldwide rail/bus hubs | no | exists |
+| `solar` | Kepler math + lunar theory, zero network: Sun, Moon, 8 planets, Pluto, 5 major moons | no | exists |
 
 ## Broadcast Module
 | Function | Signature | Notes |
@@ -80,9 +85,8 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | Piece | Notes |
 |-------|-------|
 | `index.html` | globe container, search rail, dossier, ticker; IDs in `tests/unit/landingStatic.test.js` U-STATIC-03 |
-| `app.js` | Cesium viewer (Esri/OSM/hybrid), canvas airline badges, flagcdn flags, `/api/snapshot` + ws reconcile, demo fallback |
-| `app2d.js` | Leaflet 2D fallback (Esri satellite), same dossier via shared.js, auto-loaded when WebGL/Cesium unavailable |
-| `shared.js` | dossier/search/ticker + DEMO + airline/flag/fare helpers shared by 3D and 2D |
+| `app.js` | Cesium viewer + heliocentric solar scene, canvas badges, flagcdn flags, `/api` + ws reconcile, layer overlays, terminator, solar animation |
+| `shared.js` | dossier/search/ticker + DEMO + airline/flag/fare helpers shared across modes |
 | `styles.css` | Space Grotesk + IBM Plex Mono; tokens `--space/--cyan/--amber` |
 
 ## Known limitations

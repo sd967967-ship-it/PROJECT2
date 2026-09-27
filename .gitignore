@@ -17,11 +17,16 @@ $RECYCLE.BIN/
 # Env / secrets - never commit
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 
 # Dependencies (uncomment for your stack)
 node_modules/
+# Playwright E2E artifacts
+test-results/
+playwright-report/
+tests/reports/*.png
 # __pycache__/
 # .venv/
 # target/

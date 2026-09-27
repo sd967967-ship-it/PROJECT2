@@ -8,30 +8,65 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css'" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
 <div id="globe"></div>
-<div id="map2d" hidden></div>
 <div class="zoomctl" role="group" aria-label="Map zoom">
   <button id="zin" aria-label="Zoom in">+</button>
   <button id="zout" aria-label="Zoom out">−</button>
+  <button id="tour" aria-label="Tour solar system" title="Tour solar bodies" hidden>◉</button>
 </div>
 <div id="nogl" hidden><p id="noglMsg">3D could not start.</p><p class="muted">Try a recent Chrome, Edge, or Firefox.</p></div>
 <header class="rail">
   <div class="brand"><img class="logo" src="./logo.svg" alt="SkyTrack logo" />SkyTrack <span class="live-dot" id="liveDot"></span><span class="badge" id="modeBadge">connecting</span></div>
   <input id="search" type="search" placeholder="Search callsign, airline, airport…" aria-label="Search flights" />
-  <div class="layers" role="group" aria-label="Imagery">
-    <button data-lyr="sat" class="on">Satellite</button><button data-lyr="hybrid">Hybrid</button><button data-lyr="street">Streets</button><button data-lyr="esri">Esri</button>
+  <div class="modes" role="group" aria-label="Tracking mode">
+    <button data-domain="sky" class="on" aria-pressed="true">Sky</button><button data-domain="sea" aria-pressed="false">Sea</button><button data-domain="streets" aria-pressed="false">Streets</button><button data-domain="space" aria-pressed="false">Space</button>
   </div>
-  <ul id="results" aria-live="polite"></ul>
+  <div class="layers" role="group" aria-label="Imagery">
+    <button data-lyr="sat" class="on" aria-pressed="true">Satellite</button><button data-lyr="hybrid" aria-pressed="false">Hybrid</button><button data-lyr="street" aria-pressed="false">Streets</button><button data-lyr="esri" aria-pressed="false">Esri</button>
+  </div>
+  <ul id="results" role="listbox" aria-label="Search results" aria-live="polite"></ul>
+  <details class="panel" id="layerPanel">
+    <summary>Layers &amp; data <span id="layerCount" class="badge"></span></summary>
+    <div id="layerRows" role="group" aria-label="Data layers"></div>
+    <div class="wxblock" id="systemBlock" hidden>
+      <h3>Transit systems</h3>
+      <div class="row" id="systemRow" role="group" aria-label="Transit systems">
+        <label><input type="checkbox" data-system="rail" checked /> Rail</label>
+        <label><input type="checkbox" data-system="metro" checked /> Metro</label>
+        <label><input type="checkbox" data-system="tram" checked /> Tram</label>
+        <label><input type="checkbox" data-system="bus" checked /> Bus</label>
+      </div>
+    </div>
+    <div class="wxblock">
+      <h3>Weather at view center</h3>
+      <div class="row"><button id="wxGo">Get conditions</button>
+        <label>Units <select id="wxUnits" aria-label="Weather units"><option value="metric">Metric</option><option value="imperial">Imperial</option></select></label></div>
+      <div id="wxOut" class="muted" aria-live="polite">Not queried yet.</div>
+    </div>
+    <div class="wxblock">
+      <h3>Space weather</h3>
+      <div id="kpOut" class="muted">Kp index loads with the layer list.</div>
+    </div>
+    <div class="wxblock" id="solarBlock" hidden>
+      <h3>Solar system</h3>
+      <div class="row"><button id="simPlay" aria-pressed="false">Play animation</button>
+        <label>Speed <select id="simSpeed" aria-label="Animation speed"><option value="1800">1 hour / second</option><option value="86400" selected>1 day / second</option><option value="604800">1 week / second</option></select></label></div>
+      <div class="row"><label>Date <input id="simDate" type="date" min="1900-01-01" max="2100-01-01" /></label><button id="simReset">Now</button></div>
+      <div id="simBadge" class="muted" aria-live="polite">Live positions</div>
+      <details id="solarTableW"><summary>Bodies table (text alternative)</summary><table class="fares"><thead><tr><th scope="col">Body</th><th scope="col">Distance</th><th scope="col">Notes</th></tr></thead><tbody id="solarRows"></tbody></table></details>
+      <p class="fine">Sizes and distances not to scale. Planet positions approximate (JPL elements); satellites predicted from CelesTrak TLE, not precise tracking. Sources: JPL SSD, CelesTrak.</p>
+    </div>
+  </details>
+  <p id="srStatus" class="sr-only" aria-live="polite"></p>
 </header>
-<aside class="dossier" id="panel" aria-live="polite">
+<aside class="dossier" id="panel" aria-labelledby="pTitle">
   <button id="close" aria-label="Close flight details">×</button>
   <div class="flight-head">
     <img id="pFlag" alt="" hidden />
-    <div><h2 id="pTitle">Pick a flight</h2><p class="muted" id="pSub">Click any badge on the globe.</p></div>
+    <div><h2 id="pTitle" tabindex="-1">Pick a flight</h2><p class="muted" id="pSub">Search above or click any badge on the globe.</p></div>
   </div>
   <div class="grid">
     <div><label>Speed</label><b id="pSpeed">–</b></div>
@@ -42,13 +77,18 @@
     <div><label>Capacity</label><b id="pCap">–</b></div>
   </div>
   <h3>Route</h3><div id="pRoute" class="muted">Position-only track</div>
-  <button id="follow">Follow this flight</button>
+  <button id="follow" aria-pressed="false">Follow this flight</button>
   <h3>Services</h3><ul id="pServices" class="chips"></ul>
   <h3>Fares <span class="muted-sm">modeled avg</span></h3>
   <table class="fares"><tbody id="pFares"></tbody></table>
   <p class="fine" id="pFine">Capacity is aircraft seats plus a typical-load band, an estimate. Fares are distance-modeled until collected history lands.</p>
 </aside>
-<footer class="ticker"><span id="count">0</span> airborne · <span id="topList"></span><span class="src">Data OpenSky + adsb.lol · Imagery Esri + OSM · Flags flagcdn</span></footer>
+<footer class="ticker">
+  <span id="count">0</span> <span id="noun">airborne</span> ·
+  <span id="topList"></span>
+  <span id="airportSection" class="muted-sm" style="margin-left:1em; font-size:0.8em;">airport: —</span>
+  <span class="src">Data OpenSky + adsb.lol · Imagery Esri + OSM · Flags flagcdn</span>
+</footer>
 <script>
 window.__cesiumSources = [
   "https://unpkg.com/cesium@1.145.0/Build/Cesium/",
@@ -66,54 +106,54 @@ function fail(msg) {
   document.getElementById("noglMsg").textContent = msg;
   document.getElementById("nogl").hidden = false;
 }
-window.__leafletSources = [
-  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
-  "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
-];
-function webglOK() {
+function webglInfo() {
+  // Precise cause, not just boolean: distinguishes no-WebGL, WebGL1-only,
+  // and CPU (SwiftShader/llvmpipe) rendering so the UI can adapt and advise.
+  const info = { ok2: false, ok1: false, software: false, renderer: "" };
   try {
     const c = document.createElement("canvas");
-    return !!(c.getContext("webgl2") || c.getContext("webgl"));
-  } catch { return false; }
+    const g2 = c.getContext("webgl2");
+    info.ok2 = !!g2;
+    const g = g2 || c.getContext("webgl") || c.getContext("experimental-webgl");
+    info.ok1 = !!g;
+    const gl = g2 || g;
+    if (gl) {
+      try {
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        const r = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        info.renderer = String(r || "");
+        info.software = /swiftshader|llvmpipe|softpipe|basic render/i.test(info.renderer);
+      } catch { /* renderer string unavailable */ }
+    }
+  } catch { /* no canvas support at all */ }
+  return info;
 }
 (async function () {
-  // Shared dossier/search/ticker logic always loads first.
-  try { await loadScript("./shared.js"); }
+  // Shared dossier/search/ticker logic always loads first (?v= cache-buster:
+  // bump when shipping frontend fixes so browsers pick them up).
+  try { await loadScript("./shared.js?v=4"); }
   catch (e) { fail("App failed to load: " + e.message); return; }
-  // Prefer 3D; fall back to 2D satellite automatically when WebGL/Cesium is unavailable.
-  let threeD = webglOK();
-  if (threeD) {
-    let ok = false;
-    for (const base of window.__cesiumSources) {
-      window.CESIUM_BASE_URL = base;
-      try { await loadScript(base + "Cesium.js"); ok = typeof Cesium !== "undefined"; if (ok) break; }
-      catch { /* try next CDN */ }
-    }
-    threeD = ok;
+  // 3D globe is a hard requirement, but try every path before giving up:
+  // integrated and CPU rendering both work when the browser allows WebGL2.
+  const gl = webglInfo();
+  window.__glInfo = gl; // diagnostics seam (E2E + support)
+  if (!gl.ok2 && !gl.ok1) {
+    fail("3D globe needs WebGL, which your browser has disabled. Turn on hardware acceleration (Chrome/Edge: Settings → System → Use graphics acceleration when available), update your Intel graphics driver, then reload. As a fallback, relaunch Chrome with the --enable-unsafe-swiftshader flag for CPU rendering.");
+    return;
   }
-  if (threeD) { await loadScript("./app.js"); return; }
-  let ok2d = false;
-  for (const src of window.__leafletSources) {
-    try { await loadScript(src); ok2d = typeof L !== "undefined"; if (ok2d) break; }
+  if (!gl.ok2) {
+    fail("3D globe needs WebGL2, but your browser only offers WebGL1. Update your browser and graphics driver, then reload.");
+    return;
+  }
+  let ok = false;
+  for (const base of window.__cesiumSources) {
+    window.CESIUM_BASE_URL = base;
+    try { await loadScript(base + "Cesium.js"); ok = typeof Cesium !== "undefined"; if (ok) break; }
     catch { /* try next CDN */ }
   }
-  if (!ok2d) { fail("Could not download map libraries from any CDN. Check your internet connection and reload."); return; }
-  for (const css of [
-    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css",
-    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css",
-  ]) {
-    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = css; document.head.appendChild(l);
-  }
-  let mc = false;
-  for (const src of [
-    "https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js",
-    "https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js",
-  ]) {
-    try { await loadScript(src); mc = typeof L.markerClusterGroup === "function"; if (mc) break; }
-    catch { /* try next CDN */ }
-  }
-  document.getElementById("modeBadge").textContent = "2D fallback";
-  await loadScript("./app2d.js");
+  if (!ok) { fail("Could not download the 3D globe library from any CDN. Check your connection and reload."); return; }
+  if (gl.software) window.__softwareGL = true; // app.js tunes resolution + frame rate down
+  await loadScript("./app.js?v=4");
 })();
 </script>
 </body>

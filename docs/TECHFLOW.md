@@ -6,7 +6,7 @@
 4. Client reconciles markers (yellow planes / clusters); click → `GET /api/flights/:hex` (served from cache, ≤500ms).
 5. `GET /api/flights/:hex` payload: record + capacity (see LLD.md#capacity-module) + fares (see LLD.md#pricing-module) + services + great-circle arc points.
 6. Background every 30s (`POLL_MS`): `poller.js` → OpenSky (fallback: adsb.lol 43-cell sweep into 5min registry; 429 → exponential backoff to 10min, sweep continues) → `fuse()` → refresh cache. Browsers never call feeds directly.
-7. Mode switch (Sky/Sea/Streets/Space): client swaps `TrackingSource` domain over the same `ws` contract; dossier/search/ticker unchanged. Space mode serves TLE-propagated satellites + math-only solar scene.
+7. Mode switch (Sky/Sea/Streets/Space): client sends `{op:"sub", domain}` over the same `ws` contract and fetches `/api/:domain/snapshot`; dossier/search/ticker/markers branch per kind, never a new UI. Space merges TLE-propagated satellites (CelesTrak, hourly) with math-only solar subpoints (`/api/space/solar`). Unknown domain → 404 on REST, sky on ws.
 
 ## Failure modes
 | Failure | Behavior |

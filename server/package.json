@@ -8,9 +8,13 @@
     "start": "node src/index.js",
     "test": "node --test \"test/*.test.js\""
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "express": "^4.21.2",
+    "fast-xml-parser": "^5.11.1",
+    "satellite.js": "^7.1.0",
     "ws": "^8.18.0"
   }
 }
