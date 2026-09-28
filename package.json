@@ -1,14 +1,20 @@
 {
-  "name": "project2",
-  "version": "1.0.0",
-  "description": "Shared repo for multi-computer workflow (Option B).",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
+  "name": "skytrack",
+  "version": "0.2.0",
+  "description": "SkyTrack — live Earth and space intelligence (web + desktop).",
+  "main": "desktop/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "desktop": "electron .",
+    "dist": "electron-builder --win zip"
+  },
+  "build": {
+    "appId": "com.skytrack.app",
+    "productName": "SkyTrack",
+    "directories": { "output": "C:/Users/sd967/AppData/Local/Temp/skytrack-dist" },
+    "files": ["server/**/*", "server/node_modules/**/*", "public/**/*", "desktop/main.js", "desktop/icon.ico", "package.json"],
+    "win": { "target": ["zip"], "icon": "desktop/icon.ico" },
+    "portable": { "artifactName": "SkyTrack-${version}.${ext}" }
   },
   "repository": {
     "type": "git",
@@ -23,6 +29,8 @@
   },
   "homepage": "https://github.com/sd967967-ship-it/PROJECT2#readme",
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
   }
 }

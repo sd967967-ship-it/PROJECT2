@@ -23,6 +23,8 @@ $RECYCLE.BIN/
 
 # Dependencies (uncomment for your stack)
 node_modules/
+# Electron build output
+dist/
 # Playwright E2E artifacts
 test-results/
 playwright-report/

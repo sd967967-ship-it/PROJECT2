@@ -27,6 +27,7 @@ _Last updated: 2026-09-27_
 - CPU-graphics support — 2026-09-27 — WebGL probe reports renderer class (SwiftShader tuned: 0.75 resolution, 30fps cap, announced); `failIfMajorPerformanceCaveat:false` never refuses a context; guided fix steps when WebGL is truly off; cache-buster bumped (?v=4); 2D fallback deleted (3D-only by design).
 - Council review round — 2026-09-28 — 3-reviewer council (security, UX/a11y, QA/data) returned 28 findings; fixed: stored-XSS sinks, fetch allowlist, mixed-source honesty, mobile rail/dossier overlap, dossier live-region, reduced-motion gates, touch targets, keyboard search + stale-notice, rail null-ID guard, Kp Poller-array bug, quakes floor, empty-payload timestamps; re-review on final state: no hard violations, P7 corrected to partial.
 - Dossier close fix — 2026-09-28 — the × button reset text but never hid the panel; now `closeDossier()` hides it, any open re-shows it, Escape closes too; verified by E-DETAIL-01 in a real browser.
+- Desktop app — 2026-09-29 — Electron shell (`desktop/main.js`): backend runs in-process, single-instance, portable exe via `npm run dist`; launch-verified (backend live, all domains); System32 note: 32-bit packaging tools can't read that path, so exe output goes to `%TEMP%\skytrack-dist` and target is `zip` (NSIS unusable there).
 
 ## 🚧 In progress
 - Landing polish + airport board (P4) + deploy free host.

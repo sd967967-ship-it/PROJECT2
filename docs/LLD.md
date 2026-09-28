@@ -61,8 +61,7 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | getSnapshot | `getSnapshot(domain, bbox?) -> {t, src, movers[]}` | `movers[] = {id, domain, kind, lat, lon, altM, velKmh, hdg, label, meta, src}`; one seam for sky/sea/streets/space; see `server/src/tracking/source.js` |
 | deriveSrc | `deriveSrc(cacheSrc, states) -> live\|fallback\|demo\|none` | live only on primary success; demo when every row is demo or cache empty |
 
-## Domain Adapters (registry grows by config, not code)
-| Adapter | Source | Key? | Status |
+## Domain Adapters (registry grows by config, not code)| Adapter | Source | Key? | Status |
 |---------|--------|------|--------|
 | `adsb` | OpenSky + adsb.lol sweep | no (auth raises quota) | exists |
 | `tle` | CelesTrak (stations, visual, geo, gps-ops, galileo, glo-ops, goes), hourly refresh + `satellite.js` | no (verified live keyless 2026-09-27) | exists (movers carry NORAD id, inclination, period, apsides, class, launch year; far-belt sats render larger) |
@@ -88,6 +87,15 @@ vel=0 → ETA null; antipodal route → clamp arc; missing route → distance/ET
 | `app.js` | Cesium viewer + heliocentric solar scene, canvas badges, flagcdn flags, `/api` + ws reconcile, layer overlays, terminator, solar animation |
 | `shared.js` | dossier/search/ticker + DEMO + airline/flag/fare helpers shared across modes |
 | `styles.css` | Space Grotesk + IBM Plex Mono; tokens `--space/--cyan/--amber` |
+
+## Desktop shell (`desktop/main.js`)
+| Function | Signature | Notes |
+|----------|-----------|-------|
+| choosePort | `choosePort(preferred?) -> port` | prefers 3000, falls back to a free port; loopback only |
+| startBackend | `startBackend(port) -> handles` | runs `server/src/index.js` `start()` in-process; singleton |
+| stopBackend | `stopBackend() -> void` | closes ws/server, stops all pollers incl. broadcast interval; idempotent |
+
+Electron window: 1440×900, menu hidden, `contextIsolation` on, single-instance lock, backend torn down on quit. Portable exe via `npm run dist` (zip; NSIS unusable from System32 paths).
 
 ## Known limitations
 No guarantee of every flight (oceans/Mode-S gaps); fares modeled until collector has 2–4 weeks data; routes nullable until schedule source added. Sea/streets coverage follows volunteer/open feeds per region; rail positions are station-anchored (NTES), not GPS. Plan-file note: `multimodal-space-plan.md` graded ships/rail as key-gated before the 2026-09-27 keyless verification — the table above supersedes it.

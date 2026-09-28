@@ -411,7 +411,7 @@ function start(port = Number(process.env.PORT || 3000)) {
       const s = tracks(); return { t: s.t, src: s.src, states: s.tracks };
     },
   };
-  attach(wss, provider);
+  const detach = attach(wss, provider);
   poller.start();
   seaPoller.start();
   streetsPoller.start();
@@ -422,7 +422,7 @@ function start(port = Number(process.env.PORT || 3000)) {
   firePoller.start();
   fiPoller.start();
   iePoller.start();
-  return { app, server, wss, poller, seaPoller, streetsPoller, tleStore, quakePoller, eventPoller, swpcPoller, firePoller, fiPoller, iePoller, domains };
+  return { app, server, wss, detach, poller, seaPoller, streetsPoller, tleStore, quakePoller, eventPoller, swpcPoller, firePoller, fiPoller, iePoller, domains };
 }
 if (require.main === module) {
   if (process.env.OPENSKY_USER && !process.env.OPENSKY_PASS) {

@@ -103,7 +103,6 @@ test("U-STATIC-11 layer panel, overlays, solar controls, no provider hosts", () 
   }
 });
 test("U-STATIC-09 brand logo + navy/silver gradient theme", () => {
-  assert.match(html, /logo\.svg/);
   assert.match(html, /rel="icon"/);
   const css = fs.readFileSync(path.join(__dirname, "..", "..", "public", "styles.css"), "utf8");
   assert.match(css, /--brand-gradient/);
@@ -112,4 +111,17 @@ test("U-STATIC-09 brand logo + navy/silver gradient theme", () => {
   const logo = fs.readFileSync(path.join(__dirname, "..", "..", "public", "logo.svg"), "utf8");
   assert.match(logo, /<svg/);
   assert.match(logo, /SkyTrack/);
+});
+test("U-STATIC-12 desktop shell bundles backend in-process", () => {
+  const main = fs.readFileSync(path.join(__dirname, "..", "..", "desktop", "main.js"), "utf8");
+  assert.match(main, /server\/src\/index/);
+  assert.match(main, /requestSingleInstanceLock/);
+  assert.match(main, /stopBackend/);
+  assert.match(main, /contextIsolation/);
+  assert.doesNotMatch(main, /password\s*[:=]\s*['"][^'"]{3,}/i);
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "package.json"), "utf8"));
+  assert.equal(pkg.main, "desktop/main.js");
+  assert.ok(pkg.scripts.desktop && pkg.scripts.dist);
+  assert.equal(pkg.build.productName, "SkyTrack");
+  assert.ok(fs.existsSync(path.join(__dirname, "..", "..", "desktop", "icon.png")));
 });

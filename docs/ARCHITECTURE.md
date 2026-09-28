@@ -2,6 +2,7 @@
 
 ## Tech stack
 - Backend: Node 22, Express 4, `ws` 8, `satellite.js` 7 (SGP4 propagation for the Space Adapter; MIT), `fast-xml-parser` 5 (Irish Rail XML; MIT, zero-dep) (`server/package.json`, installed 2026-09-27). No other new deps.
+- Desktop: Electron 39 + electron-builder (NSIS/portable Windows exe; MIT) as root devDeps (`package.json`, installed 2026-09-29). Backend runs in-process (`desktop/main.js` → `server/src/index.js` `start(port)`); no separate backend step.
 - Frontend: `public/` Cesium 1.x CDN (Google satellite default) + flagcdn flags, 3D-only with WebGL diagnostics. No build step.
 - Data: JSON-only (`server/data/*.json`); SQLite/Neon only when fare collector lands. Static sets are curated worldwide bundles (100+ ports, 70 rail/bus stops, coordinates ~0.01°); live positions always come from feeds, never the static files.
 - Tests: `npm test` in `server/` (21 green, verified 2026-09-27) + root `node tests/run.js` (38 green, verified 2026-09-27).

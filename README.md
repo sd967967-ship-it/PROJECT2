@@ -68,6 +68,23 @@ Rules:
 2. Single user can push to `main`. For 2+ people use branches + PRs.
 3. Shared OpenCode config is `opencode.json` in this repo. Local `cli.json` and API keys stay per-PC, never commit secrets.
 
+## Desktop app (Windows, self-contained)
+
+No manual backend start: the backend runs inside the app.
+
+```powershell
+cd $env:USERPROFILE\PROJECT2
+npm install          # root + server deps, first time only
+cd server; npm install; cd ..
+npm run desktop      # dev: opens the app window
+npm run dist         # builds SkyTrack-0.2.0-win.zip (unzip anywhere, run SkyTrack.exe)
+```
+
+Notes: needs Node 22+ and internet (first run downloads the Electron runtime).
+If this repo lives under `C:\Windows\System32`, build output goes to `%TEMP%\skytrack-dist`
+because 32-bit packaging tools cannot read that path. Optional env: `SKTRACK_PORT`
+(default 3000; falls back to a free port).
+
 ## Deploy (Render free)
 
 ```powershell
